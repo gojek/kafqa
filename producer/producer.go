@@ -2,51 +2,74 @@ package producer
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/gojekfarm/kafqa/config"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 
+type MessageCreator interface {
+	Message() []byte
+}
+
 type Producer struct {
-	Topic string
+	MessageCreator
 	*kafka.Producer
+	config   config.Producer
+	messages chan []byte
+	wg       *sync.WaitGroup
 }
 
 func (p Producer) Run() {
+	go p.runProducers()
+	var i uint64
+	p.wg.Add(p.config.Concurrency)
+	fmt.Println("started producing to chan....")
 
-	defer p.Close()
+	for i = 0; i < p.config.TotalMessages; i++ {
+		p.messages <- []byte(fmt.Sprintf("message-%d", i)) //p.MessageCreator.Message()
+	}
+	close(p.messages)
+	fmt.Println("produced all messages....")
+}
 
-	// Delivery report handler for produced messages
-	go func() {
-		for e := range p.Events() {
-			switch ev := e.(type) {
-			case *kafka.Message:
-				if ev.TopicPartition.Error != nil {
-					fmt.Printf("Delivery failed: %v\n", ev.TopicPartition)
-				} else {
-					fmt.Printf("Delivered message to %v\n", ev.TopicPartition)
-				}
-			}
-		}
-	}()
+func (p Producer) Close() error {
+	//TODO: extract out to config
+	fmt.Println("closing.....")
+	p.Flush(500)
+	p.Producer.Close()
+	p.wg.Wait()
+	return nil
+}
 
-	// Produce messages to topic (asynchronously)
-	topic := p.Topic
-	for _, word := range []string{"Welcome", "to", "the", "Confluent", "Kafka", "Golang", "client"} {
-		p.Produce(&kafka.Message{
-			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-			Value:          []byte(word),
+func (p Producer) runProducers() {
+	for i := 0; i < p.config.Concurrency; i++ {
+		fmt.Printf("running producer %d\n", i)
+		go p.ProduceWorker()
+	}
+}
+
+func (p Producer) ProduceWorker() {
+	defer p.wg.Done()
+	for msg := range p.messages {
+		p.Producer.Produce(&kafka.Message{
+			TopicPartition: kafka.TopicPartition{Topic: &p.config.Topic, Partition: kafka.PartitionAny},
+			Value:          msg,
 		}, nil)
 	}
-
-	// Wait for message deliveries before shutting down
-	p.Flush(15 * 1000)
+	fmt.Println("Completed!!!")
 }
 
 func New(prodCfg config.Producer) (*Producer, error) {
+	//TODO: kafka config keys could be consts
 	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": prodCfg.KafkaBrokers})
 	if err != nil {
 		return nil, err
 	}
-	return &Producer{prodCfg.Topic, p}, nil
+	return &Producer{
+		config:   prodCfg,
+		Producer: p,
+		messages: make(chan []byte, 1000),
+		wg:       &sync.WaitGroup{},
+	}, nil
 }

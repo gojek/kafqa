@@ -8,7 +8,7 @@ type Application struct {
 
 type Producer struct {
 	Concurrency   int    `default:"100"`
-	TotalMessages int    `split_words:"true" default:"10000"`
+	TotalMessages uint64 `split_words:"true" default:"10000"`
 	Topic         string `default:"kafqa_test"`
 	KafkaBrokers  string `split_words:"true" required:"true"`
 }

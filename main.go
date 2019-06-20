@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/gojekfarm/kafqa/config"
 	"github.com/gojekfarm/kafqa/producer"
@@ -18,4 +19,12 @@ func main() {
 	}
 	fmt.Println(config.App().Producer.KafkaBrokers)
 	p.Run()
+	var wg sync.WaitGroup
+	wg.Add(1)
+	h := producer.NewHandler(p.Events(), &wg)
+
+	go h.Handle()
+
+	p.Close()
+	wg.Wait()
 }
