@@ -1,7 +1,6 @@
 package producer
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/gojekfarm/kafqa/config"
@@ -9,16 +8,16 @@ import (
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 
-type MessageCreator interface {
-	Message() []byte
+type msgCreator interface {
+	NewBytes() []byte
 }
 
 type Producer struct {
-	MessageCreator
 	*kafka.Producer
 	config   config.Producer
 	messages chan []byte
-	wg       *sync.WaitGroup
+	msgCreator
+	wg *sync.WaitGroup
 }
 
 func (p Producer) Run() {
@@ -28,7 +27,7 @@ func (p Producer) Run() {
 	logger.Debugf("started producing to chan....")
 
 	for i = 0; i < p.config.TotalMessages; i++ {
-		p.messages <- []byte(fmt.Sprintf("message-%d", i)) //p.MessageCreator.Message()
+		p.messages <- p.msgCreator.NewBytes()
 	}
 	close(p.messages)
 	logger.Debugf("produced all messages.")
@@ -59,16 +58,17 @@ func (p Producer) ProduceWorker() {
 	}
 }
 
-func New(prodCfg config.Producer) (*Producer, error) {
+func New(prodCfg config.Producer, mc msgCreator) (*Producer, error) {
 	//TODO: kafka config keys could be consts
 	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": prodCfg.KafkaBrokers})
 	if err != nil {
 		return nil, err
 	}
 	return &Producer{
-		config:   prodCfg,
-		Producer: p,
-		messages: make(chan []byte, 1000),
-		wg:       &sync.WaitGroup{},
+		config:     prodCfg,
+		Producer:   p,
+		messages:   make(chan []byte, 1000),
+		wg:         &sync.WaitGroup{},
+		msgCreator: mc,
 	}, nil
 }

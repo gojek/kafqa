@@ -16,8 +16,14 @@ func Infof(fmt string, args ...interface{}) {
 	log.Infof(fmt, args...)
 }
 
-func Init() {
+func Init(level string) {
 	//TODO: map from env config
-	zlog, _ := zap.NewProduction()
+	var zlog *zap.Logger
+	switch level {
+	case "debug":
+		zlog, _ = zap.NewDevelopment()
+	default:
+		zlog, _ = zap.NewProduction()
+	}
 	log = zlog.Sugar()
 }

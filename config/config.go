@@ -1,11 +1,12 @@
 package config
 
-import (
-	"github.com/kelseyhightower/envconfig"
-)
-
 type Application struct {
 	Producer
+	Log
+}
+
+type Log struct {
+	Level string `split_words:"true" default:"info"`
 }
 
 type Producer struct {
@@ -17,15 +18,6 @@ type Producer struct {
 }
 
 var application Application
-
-func Load() error {
-	err := envconfig.Process("PRODUCER", &application.Producer)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
 
 func App() Application {
 	return application

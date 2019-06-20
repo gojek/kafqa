@@ -1,24 +1,28 @@
 package main
 
 import (
+	"log"
 	"sync"
 
 	"github.com/gojekfarm/kafqa/config"
+	"github.com/gojekfarm/kafqa/creator"
 	"github.com/gojekfarm/kafqa/logger"
 	"github.com/gojekfarm/kafqa/producer"
 )
 
 func main() {
-	logger.Init()
-
 	if err := config.Load(); err != nil {
-		logger.Fatalf("Error loading config: %v", err)
+		log.Fatalf("Error loading config: %v", err)
 	}
-	p, err := producer.New(config.App().Producer)
+
+	appCfg := config.App()
+	logger.Init(appCfg.Log.Level)
+
+	p, err := producer.New(appCfg.Producer, creator.New())
 	if err != nil {
 		logger.Fatalf("Error creating producer: %v", err)
 	}
-	logger.Infof("running application against %s", config.App().Producer.KafkaBrokers)
+	logger.Infof("running application against %s", appCfg.Producer.KafkaBrokers)
 	p.Run()
 	var wg sync.WaitGroup
 	wg.Add(1)
