@@ -1,9 +1,9 @@
 package producer
 
 import (
-	"fmt"
 	"sync"
 
+	"github.com/gojekfarm/kafqa/logger"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 
@@ -19,9 +19,9 @@ func (h Handler) Handle() {
 		switch ev := e.(type) {
 		case *kafka.Message:
 			if ev.TopicPartition.Error != nil {
-				fmt.Printf("Delivery failed: %v\n", ev.TopicPartition)
+				logger.Debugf("Delivery failed: %v\n", ev.TopicPartition)
 			} else {
-				fmt.Printf("Delivered message to %v\n", ev.TopicPartition)
+				logger.Debugf("Delivered message to %v\n", ev.TopicPartition)
 			}
 		}
 	}

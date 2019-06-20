@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/gojekfarm/kafqa/config"
+	"github.com/gojekfarm/kafqa/logger"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 
@@ -24,19 +25,18 @@ func (p Producer) Run() {
 	go p.runProducers()
 	var i uint64
 	p.wg.Add(p.config.Concurrency)
-	fmt.Println("started producing to chan....")
+	logger.Debugf("started producing to chan....")
 
 	for i = 0; i < p.config.TotalMessages; i++ {
 		p.messages <- []byte(fmt.Sprintf("message-%d", i)) //p.MessageCreator.Message()
 	}
 	close(p.messages)
-	fmt.Println("produced all messages....")
+	logger.Debugf("produced all messages.")
 }
 
 func (p Producer) Close() error {
-	//TODO: extract out to config
-	fmt.Println("closing.....")
-	p.Flush(500)
+	logger.Debugf("closing.....")
+	p.Flush(p.config.FlushTimeoutMs)
 	p.Producer.Close()
 	p.wg.Wait()
 	return nil
@@ -44,7 +44,7 @@ func (p Producer) Close() error {
 
 func (p Producer) runProducers() {
 	for i := 0; i < p.config.Concurrency; i++ {
-		fmt.Printf("running producer %d\n", i)
+		logger.Debugf("running producer %d\n", i)
 		go p.ProduceWorker()
 	}
 }
@@ -57,7 +57,6 @@ func (p Producer) ProduceWorker() {
 			Value:          msg,
 		}, nil)
 	}
-	fmt.Println("Completed!!!")
 }
 
 func New(prodCfg config.Producer) (*Producer, error) {
