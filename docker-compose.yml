@@ -15,7 +15,6 @@ services:
     networks:
       - kafqa
 
-
   kafka:
     image: wurstmeister/kafka:latest
     depends_on:
@@ -32,5 +31,16 @@ services:
       CONFLUENT_METRICS_ENABLE: 'false'
     links:
       - zk
+    networks:
+      - kafqa
+
+  kafka_manager:
+    image: hlebalbau/kafka-manager:stable
+    ports:
+      - "9000:9000"
+    environment:
+      ZK_HOSTS: "zk:2181"
+      APPLICATION_SECRET: "random-secret"
+    command: -Dpidfile.path=/dev/null
     networks:
       - kafqa
