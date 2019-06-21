@@ -53,10 +53,13 @@ func (p Producer) runProducers() {
 func (p Producer) ProduceWorker() {
 	defer p.wg.Done()
 	for msg := range p.messages {
-		p.Producer.Produce(&kafka.Message{
+		kafkaMsg := kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &p.config.Topic, Partition: kafka.PartitionAny},
 			Value:          msg,
-		}, nil)
+		}
+		if err := p.Producer.Produce(&kafkaMsg, nil); err != nil {
+			logger.Errorf("Error producing message to kafka: %v", err)
+		}
 	}
 }
 

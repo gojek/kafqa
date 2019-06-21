@@ -8,21 +8,25 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 
 type InmemorySuite struct {
 	suite.Suite
 	store    *store.InMemory
-	messages []creator.Message
+	messages []store.Trace
 }
 
 func (s *InmemorySuite) TestSetup() {
-	s.store = store.NewInMemory()
-	s.messages = []creator.Message{
-		{ID: "1"},
-		{ID: "2"},
-		{ID: "3"},
-		{ID: "4"},
+	msgID := func(t store.Trace) string { return t.Message.ID }
+	s.store = store.NewInMemory(msgID)
+	topic := "kafkqa_mem_store"
+	tp := kafka.TopicPartition{Topic: &topic, Partition: 1}
+	s.messages = []store.Trace{
+		{creator.Message{ID: "1"}, tp},
+		{creator.Message{ID: "2"}, tp},
+		{creator.Message{ID: "3"}, tp},
+		{creator.Message{ID: "4"}, tp},
 	}
 	for _, m := range s.messages {
 		s.store.Track(m)
@@ -37,7 +41,7 @@ func (s *InmemorySuite) ShouldReturnUnackTrackedMessages() {
 	require.Equal(t, len(s.messages), len(pending), "all messages should be in pending list")
 
 	for _, m := range pending {
-		assert.Contains(t, []string{"1", "2", "3", "4"}, m.ID)
+		assert.Contains(t, []string{"1", "2", "3", "4"}, m.Message.ID)
 	}
 }
 
@@ -66,7 +70,7 @@ func (s *InmemorySuite) TestShouldRemoveAcknowledgedMessages() {
 	require.NoError(t, err)
 	require.Equal(t, 2, len(pending), "pending messages should have 2 non ack messages")
 	for _, m := range pending {
-		assert.Contains(t, []string{"2", "4"}, m.ID)
+		assert.Contains(t, []string{"2", "4"}, m.Message.ID)
 	}
 }
 

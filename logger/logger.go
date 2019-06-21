@@ -12,6 +12,10 @@ func Fatalf(fmt string, args ...interface{}) {
 	log.Fatalf(fmt, args...)
 }
 
+func Errorf(fmt string, args ...interface{}) {
+	log.Errorf(fmt, args...)
+}
+
 func Infof(fmt string, args ...interface{}) {
 	log.Infof(fmt, args...)
 }
