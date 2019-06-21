@@ -9,7 +9,7 @@ import (
 )
 
 type msgCreator interface {
-	NewBytes() []byte
+	NewBytes() ([]byte, error)
 }
 
 type Producer struct {
@@ -27,7 +27,9 @@ func (p Producer) Run() {
 	logger.Debugf("started producing to chan....")
 
 	for i = 0; i < p.config.TotalMessages; i++ {
-		p.messages <- p.msgCreator.NewBytes()
+		//TODO: report error
+		mBytes, _ := p.msgCreator.NewBytes()
+		p.messages <- mBytes
 	}
 	close(p.messages)
 	logger.Debugf("produced all messages.")
