@@ -34,7 +34,3 @@ func FromBytes(data []byte) (Message, error) {
 	err := enc.Decode(&m)
 	return m, err
 }
-
-func NewMessage() Message {
-	return Message{Sequence: uint64(100)}
-}
