@@ -1,7 +1,8 @@
 package reporter
 
 import (
-	"github.com/gojekfarm/kafqa/logger"
+	"fmt"
+
 	"github.com/gojekfarm/kafqa/store"
 )
 
@@ -27,5 +28,5 @@ func GenerateReport() {
 	report.Messages = Messages{
 		Lost: len(unacked),
 	}
-	logger.Infof("Report:\n%s", report.String())
+	fmt.Printf("Report:\n%s\n", report.String())
 }

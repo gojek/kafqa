@@ -36,7 +36,7 @@ func (p Producer) Run() {
 }
 
 func (p Producer) Close() error {
-	logger.Debugf("closing.....")
+	logger.Infof("closing producer...")
 	p.Flush(p.config.FlushTimeoutMs)
 	p.Producer.Close()
 	p.wg.Wait()
@@ -45,7 +45,7 @@ func (p Producer) Close() error {
 
 func (p Producer) runProducers() {
 	for i := 0; i < p.config.Concurrency; i++ {
-		logger.Debugf("running producer %d\n", i)
+		logger.Debugf("running producer %d on brokers: %s for topic %s", i, p.config.KafkaBrokers, p.config.Topic)
 		go p.ProduceWorker()
 	}
 }
