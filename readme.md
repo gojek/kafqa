@@ -6,6 +6,7 @@ Kafka quality analyser, measuring data loss, ops, latency
 * [ ] Add timestamp to kafka message
 * [ ] Compute lag (receive t - produce t)
 * [ ] Consumer
+    * [ ] listen to interrupt and kill consumer or stop with timeout
 * [ ] Add store to keep track of messages (producer) [interface]
 * [ ] Ack in store to for received messages (consumer)
 * [ ] Generate produce & consume report
