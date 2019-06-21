@@ -20,7 +20,7 @@ func Infof(fmt string, args ...interface{}) {
 	log.Infof(fmt, args...)
 }
 
-func Init(level string) {
+func Setup(level string) {
 	//TODO: map from env config
 	var zlog *zap.Logger
 	switch level {

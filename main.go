@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"sync"
 
@@ -8,40 +9,63 @@ import (
 	"github.com/gojekfarm/kafqa/creator"
 	"github.com/gojekfarm/kafqa/logger"
 	"github.com/gojekfarm/kafqa/producer"
+	"github.com/gojekfarm/kafqa/reporter"
 	"github.com/gojekfarm/kafqa/store"
 )
 
+type application struct {
+	memStore *store.InMemory
+	*producer.Producer
+	*producer.Handler
+	*sync.WaitGroup
+}
+
 func main() {
 	if err := config.Load(); err != nil {
-		log.Fatalf("Error loading config: %v", err)
+		log.Fatalf("error loading config: %v", err)
 	}
-
 	appCfg := config.App()
-	logger.Init(appCfg.Log.Level)
-
-	p, err := producer.New(appCfg.Producer, creator.New())
+	app, err := setup(appCfg)
 	if err != nil {
-		logger.Fatalf("Error creating producer: %v", err)
-	}
-
-	traceID := func(t store.Trace) string { return t.Message.ID }
-
-	memStore := store.NewInMemory(traceID)
-	if err != nil {
-		logger.Fatalf("Error creating in memory store: %v", err)
+		log.Fatalf("error initializing app: %v", err)
 	}
 
 	logger.Infof("running application against %s", appCfg.Producer.KafkaBrokers)
-	p.Run()
-	var wg sync.WaitGroup
-	wg.Add(1)
-	h := producer.NewHandler(p.Events(), &wg, memStore)
+	app.Producer.Run()
+	app.WaitGroup.Add(1)
 
-	go h.Handle()
+	go app.Handler.Handle()
 
-	p.Close()
-	wg.Wait()
 	logger.Infof("Completed.")
-	unacked, _ := memStore.Unacknowledged()
-	logger.Infof("Unacked messages: %v, total: %d", unacked, len(unacked))
+
+	app.Close()
+	defer reporter.GenerateReport()
+}
+
+func (app application) Close() {
+	app.Producer.Close()
+	app.Wait()
+}
+
+func setup(appCfg config.Application) (*application, error) {
+	logger.Setup(appCfg.Log.Level)
+
+	var wg sync.WaitGroup
+
+	var err error
+	kafkaProducer, err := producer.New(appCfg.Producer, creator.New())
+	if err != nil {
+		return nil, fmt.Errorf("error creating producer: %v", err)
+	}
+	traceID := func(t store.Trace) string { return t.Message.ID }
+	memStore := store.NewInMemory(traceID)
+
+	reporter.Setup(memStore)
+
+	return &application{
+		memStore:  memStore,
+		Producer:  kafkaProducer,
+		Handler:   producer.NewHandler(kafkaProducer.Events(), &wg, memStore),
+		WaitGroup: &wg,
+	}, nil
 }
