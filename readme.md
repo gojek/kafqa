@@ -3,7 +3,6 @@
 Kafka quality analyser, measuring data loss, ops, latency
 
 ### TODO
-* [ ] Add timestamp to kafka message
 * [ ] Compute lag (receive t - produce t)
 * [ ] Consumer
     * [ ] listen to interrupt and kill consumer or stop with timeout
@@ -44,3 +43,4 @@ message {
 
 ### Done:
 * [X] convert fmt to log
+* [X] Add timestamp to kafka message
