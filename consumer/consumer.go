@@ -16,8 +16,11 @@ func RunConsumer() {
 	if err != nil {
 		panic(err)
 	}
-
-	c.SubscribeTopics([]string{"myTopic", "^aRegex.*[Tt]opic"}, nil)
+	defer c.Close()
+	err = c.SubscribeTopics([]string{"myTopic", "^aRegex.*[Tt]opic"}, nil)
+	if err != nil {
+		panic(err)
+	}
 
 	for {
 		msg, err := c.ReadMessage(-1)
@@ -28,6 +31,4 @@ func RunConsumer() {
 			fmt.Printf("Consumer error: %v (%v)\n", err, msg)
 		}
 	}
-
-	c.Close()
 }

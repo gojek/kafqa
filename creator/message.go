@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-//Message format for kafka message
+// Message format for kafka message
 type Message struct {
 	Sequence    uint64
 	ID          string
@@ -14,7 +14,7 @@ type Message struct {
 	Data        []byte
 }
 
-//Bytes Serializes the message via gob encoder
+// Bytes Serializes the message via gob encoder
 func (m Message) Bytes() ([]byte, error) {
 	var messageBuffer bytes.Buffer
 	enc := gob.NewEncoder(&messageBuffer)
@@ -25,7 +25,7 @@ func (m Message) Bytes() ([]byte, error) {
 	return messageBuffer.Bytes(), nil
 }
 
-//FromBytes DeSerializes the bytes data to a message via gob decoder
+// FromBytes DeSerializes the bytes data to a message via gob decoder
 func FromBytes(data []byte) (Message, error) {
 	var messageBuffer bytes.Buffer
 	messageBuffer.Write(data)

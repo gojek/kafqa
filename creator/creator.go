@@ -1,7 +1,6 @@
 package creator
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/icrowley/fake"
@@ -17,7 +16,7 @@ func (c *Creator) NewBytes() ([]byte, error) {
 	id := uuid.NewV4()
 	return Message{
 		Sequence:    c.index,
-		ID:          fmt.Sprintf("%s", id),
+		ID:          id.String(),
 		CreatedTime: time.Now(),
 		Data:        []byte(fake.ParagraphsN(10)),
 	}.Bytes()
