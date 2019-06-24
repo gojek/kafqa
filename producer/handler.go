@@ -24,7 +24,7 @@ func (h *Handler) Handle() {
 			if ev.TopicPartition.Error != nil {
 				logger.Debugf("Delivery failed: %v\n", ev.TopicPartition)
 			} else {
-				//	logger.Debugf("Delivered message to %v\n", ev.TopicPartition)
+				logger.Debugf("Delivered message to %v\n", ev.TopicPartition)
 				msg, err := creator.FromBytes(ev.Value)
 				if err != nil {
 					logger.Errorf("Decoding Message failed: %v\n", ev.TopicPartition)

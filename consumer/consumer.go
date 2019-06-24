@@ -15,33 +15,41 @@ type Consumer struct {
 	config config.Consumer
 	*kafka.Consumer
 	sync.WaitGroup
+	messages chan *kafka.Message
 }
 
 func (c *Consumer) Run(ctx context.Context) {
 	c.Add(1)
 	logger.Debugf("running consumer on brokers: %s, subscribed to: %s", c.config.KafkaBrokers, c.config.Topic)
-	go c.consume(ctx)
+	go c.processor(ctx)
+	go c.consumerWorker(ctx)
 	c.Done()
 }
 
-func (c *Consumer) consume(ctx context.Context) {
+func (c *Consumer) processor(ctx context.Context) {
 	for {
 		select {
-		case event := <-c.Events():
-			c.processEvent(event)
+		case msg := <-c.messages:
+			logger.Debugf("received message on %s: message: %s\n", msg.TopicPartition, string(msg.Value))
 		case <-ctx.Done():
 			logger.Debugf("context done, closing consumer")
 			return
 		}
 	}
 }
-func (c *Consumer) processEvent(event kafka.Event) {
-	switch ev := event.(type) {
-	case *kafka.Message:
-		msg := ev
-		logger.Debugf("received message on %s: message: %s\n", msg.TopicPartition, string(msg.Value))
-	default:
-		logger.Debugf("received event: %v", ev)
+
+func (c *Consumer) consumerWorker(ctx context.Context) {
+	for {
+		msg, err := c.ReadMessage(c.config.PollTimeout())
+		if err != nil {
+			logger.Errorf("error consuming messages: %v timeout: %v", err, c.config.PollTimeout())
+		} else {
+			c.messages <- msg
+		}
+		if err := ctx.Err(); err != nil {
+			logger.Debugf("context done, closing consumer worker %v", err)
+			return
+		}
 	}
 }
 
@@ -61,5 +69,9 @@ func New(cfg config.Consumer) (*Consumer, error) {
 		return nil, fmt.Errorf("error subscribing to topic: %v", err)
 	}
 
-	return &Consumer{Consumer: cons, config: cfg}, nil
+	return &Consumer{
+		Consumer: cons,
+		config:   cfg,
+		messages: make(chan *kafka.Message, 100),
+	}, nil
 }

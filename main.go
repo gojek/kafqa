@@ -47,7 +47,7 @@ func main() {
 	logger.Infof("Completed.")
 
 	//TODO: extract as config
-	time.Sleep(30 * time.Second)
+	time.Sleep(20 * time.Second)
 	app.Close()
 	defer reporter.GenerateReport()
 }
