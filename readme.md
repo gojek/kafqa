@@ -11,7 +11,6 @@ Kafka quality analyser, measuring data loss, ops, latency
 * [ ] Generate produce & consume report
 * [ ] Prometheus exporter for metrics
 * [ ] CI (vet/lint/golangci) (travis)
-* [ ] Makefile
 
 ### Report
 
@@ -44,3 +43,4 @@ message {
 ### Done:
 * [X] convert fmt to log
 * [X] Add timestamp to kafka message
+* [X] Makefile
