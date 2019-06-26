@@ -3,6 +3,7 @@ package creator
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
 	"time"
 )
 
@@ -33,4 +34,8 @@ func FromBytes(data []byte) (Message, error) {
 	var m Message
 	err := enc.Decode(&m)
 	return m, err
+}
+
+func (m Message) String() string {
+	return fmt.Sprintf("ID: %s sequence: %d time: %s", m.ID, m.Sequence, m.CreatedTime.Format(time.RFC3339))
 }

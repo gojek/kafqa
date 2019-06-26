@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/gojekfarm/kafqa/config"
+	"github.com/gojekfarm/kafqa/creator"
 	"github.com/gojekfarm/kafqa/logger"
 
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
@@ -19,18 +21,19 @@ type Consumer struct {
 }
 
 func (c *Consumer) Run(ctx context.Context) {
-	c.Add(1)
+	c.Add(2)
 	logger.Debugf("running consumer on brokers: %s, subscribed to: %s", c.config.KafkaBrokers, c.config.Topic)
 	go c.processor(ctx)
 	go c.consumerWorker(ctx)
-	c.Done()
 }
 
 func (c *Consumer) processor(ctx context.Context) {
+	defer c.Done()
 	for {
 		select {
 		case msg := <-c.messages:
-			logger.Debugf("received message on %s: message: %s\n", msg.TopicPartition, string(msg.Value))
+			message, _ := creator.FromBytes(msg.Value)
+			logger.Debugf("received message on %s: message: %s\n", msg.TopicPartition, message)
 		case <-ctx.Done():
 			logger.Debugf("context done, closing consumer")
 			return
@@ -39,16 +42,31 @@ func (c *Consumer) processor(ctx context.Context) {
 }
 
 func (c *Consumer) consumerWorker(ctx context.Context) {
+	defer c.Done()
+
 	for {
+		logger.Debugf("polling kafka for messages... with timeout %v", c.config.PollTimeout())
 		msg, err := c.ReadMessage(c.config.PollTimeout())
 		if err != nil {
-			logger.Errorf("error consuming messages: %v timeout: %v", err, c.config.PollTimeout())
+			kerr, ok := err.(kafka.Error)
+			if ok && kerr.Code() != kafka.ErrTimedOut {
+				logger.Errorf("error consuming messages: %+v timeout: %v", kerr, c.config.PollTimeout())
+			} else {
+				logger.Errorf("error consuming messages: %+v timeout: %v", err, c.config.PollTimeout())
+			}
 		} else {
 			c.messages <- msg
 		}
 		if err := ctx.Err(); err != nil {
 			logger.Debugf("context done, closing consumer worker %v", err)
 			return
+		}
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			// This is required to preempt goroutine
+			time.Sleep(10 * time.Millisecond)
 		}
 	}
 }

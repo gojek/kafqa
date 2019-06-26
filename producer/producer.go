@@ -40,6 +40,7 @@ func (p Producer) Close() error {
 	p.Flush(p.config.FlushTimeoutMs)
 	p.Producer.Close()
 	p.wg.Wait()
+	logger.Infof("closed producer...")
 	return nil
 }
 
@@ -60,6 +61,7 @@ func (p Producer) ProduceWorker() {
 		if err := p.Producer.Produce(&kafkaMsg, nil); err != nil {
 			logger.Errorf("Error producing message to kafka: %v", err)
 		}
+		//TODO: introduce configured delay here
 	}
 }
 

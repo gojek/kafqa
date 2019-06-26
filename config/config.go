@@ -10,6 +10,11 @@ type Application struct {
 	Producer
 	Consumer
 	Log
+	Config
+}
+
+type Config struct {
+	DurationMs int64 `split_words:"true" default:"10000"`
 }
 
 type Log struct {
@@ -28,13 +33,17 @@ type Consumer struct {
 	Topic         string `default:"kafqa_test" envconfig:"KAFKA_TOPIC"`
 	Concurrency   int    `default:"20"`
 	KafkaBrokers  string `split_words:"true" required:"true"`
-	GroupID       string `split_words:"true" default:"kafqa_test_consumer_001"`
+	GroupID       string `split_words:"true" default:"kafqa_test_consumer"`
 	OffsetReset   string `split_words:"true" default:"earliest"`
-	PollTimeoutMs int64  `split_words:"true" default:"-1"`
+	PollTimeoutMs int64  `split_words:"true" default:"500"`
 }
 
 func App() Application {
 	return application
+}
+
+func (a Application) RunDuration() time.Duration {
+	return time.Duration(a.Config.DurationMs) * time.Millisecond
 }
 
 func (c Consumer) KafkaConfig() *kafka.ConfigMap {

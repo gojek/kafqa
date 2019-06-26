@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
 	"sync"
-	"time"
+	"syscall"
 
 	"github.com/gojekfarm/kafqa/config"
 	"github.com/gojekfarm/kafqa/consumer"
@@ -44,20 +46,16 @@ func main() {
 
 	go app.Handler.Handle()
 
-	logger.Infof("Completed.")
-
-	//TODO: extract as config
-	time.Sleep(20 * time.Second)
-	app.Close()
 	defer reporter.GenerateReport()
+	app.Wait()
+	logger.Infof("Completed.")
 }
 
-func (app application) Close() {
+func (app *application) Close() {
 	logger.Infof("closing application...")
 	app.cancel()
 	app.Producer.Close()
 	app.Consumer.Close()
-	app.Wait()
 }
 
 func setup(appCfg config.Application) (*application, error) {
@@ -78,11 +76,11 @@ func setup(appCfg config.Application) (*application, error) {
 	traceID := func(t store.Trace) string { return t.Message.ID }
 	memStore := store.NewInMemory(traceID)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), appCfg.RunDuration())
 
 	reporter.Setup(memStore)
 
-	return &application{
+	app := &application{
 		memStore:  memStore,
 		Producer:  kafkaProducer,
 		Consumer:  kafkaConsumer,
@@ -90,5 +88,27 @@ func setup(appCfg config.Application) (*application, error) {
 		WaitGroup: &wg,
 		ctx:       ctx,
 		cancel:    cancel,
-	}, nil
+	}
+	go app.registerSignalHandler()
+	return app, nil
+}
+
+func (app *application) registerSignalHandler() {
+	defer app.WaitGroup.Done()
+
+	exit := make(chan os.Signal, 1)
+	signal.Notify(exit, syscall.SIGINT, syscall.SIGTERM)
+	app.WaitGroup.Add(1)
+	for {
+		select {
+		case <-app.ctx.Done():
+			logger.Debugf("context done, closing application")
+			app.Close()
+			return
+		case <-exit:
+			logger.Debugf("Received interrupt, closing application")
+			app.Close()
+			return
+		}
+	}
 }

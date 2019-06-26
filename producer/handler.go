@@ -22,17 +22,16 @@ func (h *Handler) Handle() {
 		switch ev := e.(type) {
 		case *kafka.Message:
 			if ev.TopicPartition.Error != nil {
-				logger.Debugf("Delivery failed: %v\n", ev.TopicPartition)
+				logger.Debugf("Delivery failed: %v", ev.TopicPartition)
 			} else {
-				logger.Debugf("Delivered message to %v\n", ev.TopicPartition)
 				msg, err := creator.FromBytes(ev.Value)
 				if err != nil {
-					logger.Errorf("Decoding Message failed: %v\n", ev.TopicPartition)
+					logger.Errorf("Decoding Message failed: %v", ev.TopicPartition)
 				}
 				trace := store.Trace{Message: msg, TopicPartition: ev.TopicPartition}
 				err = h.memStore.Track(trace)
 				if err != nil {
-					logger.Errorf("Couldn't track message: %v\n", ev.TopicPartition)
+					logger.Errorf("Couldn't track message: %v", ev.TopicPartition)
 				}
 			}
 		default:
