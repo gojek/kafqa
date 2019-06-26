@@ -59,7 +59,7 @@ func (app *application) Close() {
 }
 
 func setup(appCfg config.Application) (*application, error) {
-	logger.Setup(appCfg.Log.Level)
+	logger.Setup(appCfg.LogLevel())
 
 	var wg sync.WaitGroup
 
@@ -75,6 +75,11 @@ func setup(appCfg config.Application) (*application, error) {
 
 	traceID := func(t store.Trace) string { return t.Message.ID }
 	memStore := store.NewInMemory(traceID)
+
+	kafkaConsumer.Register(consumer.Acker(memStore))
+	if appCfg.DevEnvironment() {
+		kafkaConsumer.Register(consumer.Display)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), appCfg.RunDuration())
 

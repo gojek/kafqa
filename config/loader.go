@@ -13,10 +13,6 @@ func Load() error {
 	if err != nil {
 		return err
 	}
-	err = envconfig.Process("LOG", &application.Log)
-	if err != nil {
-		return err
-	}
 	err = envconfig.Process("APP", &application.Config)
 	if err != nil {
 		return err

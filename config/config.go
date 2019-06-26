@@ -9,16 +9,12 @@ import (
 type Application struct {
 	Producer
 	Consumer
-	Log
 	Config
 }
 
 type Config struct {
-	DurationMs int64 `split_words:"true" default:"10000"`
-}
-
-type Log struct {
-	Level string `split_words:"true" default:"info"`
+	Environment string `default:"production"`
+	DurationMs  int64  `split_words:"true" default:"10000"`
 }
 
 type Producer struct {
@@ -44,6 +40,17 @@ func App() Application {
 
 func (a Application) RunDuration() time.Duration {
 	return time.Duration(a.Config.DurationMs) * time.Millisecond
+}
+
+func (a Application) LogLevel() string {
+	if a.DevEnvironment() {
+		return "debug"
+	}
+	return "info"
+}
+
+func (a Application) DevEnvironment() bool {
+	return a.Config.Environment == "development"
 }
 
 func (c Consumer) KafkaConfig() *kafka.ConfigMap {

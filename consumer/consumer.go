@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gojekfarm/kafqa/config"
-	"github.com/gojekfarm/kafqa/creator"
 	"github.com/gojekfarm/kafqa/logger"
 
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
@@ -17,7 +16,8 @@ type Consumer struct {
 	config config.Consumer
 	*kafka.Consumer
 	sync.WaitGroup
-	messages chan *kafka.Message
+	messages  chan *kafka.Message
+	callbacks []Callback
 }
 
 func (c *Consumer) Run(ctx context.Context) {
@@ -27,13 +27,18 @@ func (c *Consumer) Run(ctx context.Context) {
 	go c.consumerWorker(ctx)
 }
 
+func (c *Consumer) Register(cb Callback) {
+	c.callbacks = append(c.callbacks, cb)
+}
+
 func (c *Consumer) processor(ctx context.Context) {
 	defer c.Done()
 	for {
 		select {
 		case msg := <-c.messages:
-			message, _ := creator.FromBytes(msg.Value)
-			logger.Debugf("received message on %s: message: %s\n", msg.TopicPartition, message)
+			for _, cb := range c.callbacks {
+				cb(msg)
+			}
 		case <-ctx.Done():
 			logger.Debugf("context done, closing consumer")
 			return
