@@ -18,12 +18,14 @@ type InMemory struct {
 	pending map[string]Trace
 	sync.Mutex
 	TraceID
+	res Result
 }
 
 func (ms *InMemory) Acknowledge(msg Trace) error {
 	ms.Lock()
 	defer ms.Unlock()
 
+	ms.res.Acknowledged++
 	delete(ms.pending, ms.TraceID(msg))
 	return nil
 }
@@ -32,6 +34,7 @@ func (ms *InMemory) Track(msg Trace) error {
 	ms.Lock()
 	defer ms.Unlock()
 
+	ms.res.Tracked++
 	ms.pending[ms.TraceID(msg)] = msg
 	return nil
 }
@@ -45,6 +48,15 @@ func (ms *InMemory) Unacknowledged() ([]Trace, error) {
 		msgs = append(msgs, v)
 	}
 	return msgs, nil
+}
+
+type Result struct {
+	Tracked      int64
+	Acknowledged int64
+}
+
+func (ms *InMemory) Result() Result {
+	return ms.res
 }
 
 func NewInMemory(ti TraceID) *InMemory {

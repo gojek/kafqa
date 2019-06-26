@@ -6,27 +6,29 @@ import (
 	"github.com/gojekfarm/kafqa/store"
 )
 
-type unackStore interface {
-	Unacknowledged() ([]store.Trace, error)
+type storeReporter interface {
+	Result() store.Result
 }
 
 type reporter struct {
-	unackStore
+	srep storeReporter
 }
 
 var rep reporter
 
-func Setup(u unackStore) {
+func Setup(sr storeReporter) {
 	rep = reporter{
-		unackStore: u,
+		srep: sr,
 	}
 }
 
 func GenerateReport() {
 	var report Report
-	unacked, _ := rep.Unacknowledged()
+	sres := rep.srep.Result()
 	report.Messages = Messages{
-		Lost: len(unacked),
+		Sent:     sres.Tracked,
+		Received: sres.Acknowledged,
+		Lost:     sres.Tracked - sres.Acknowledged,
 	}
 	fmt.Printf("Report:\n%s\n", report.String())
 }
