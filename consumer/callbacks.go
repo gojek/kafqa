@@ -1,8 +1,11 @@
 package consumer
 
 import (
+	"time"
+
 	"github.com/gojekfarm/kafqa/creator"
 	"github.com/gojekfarm/kafqa/logger"
+	"github.com/gojekfarm/kafqa/reporter"
 	"github.com/gojekfarm/kafqa/store"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
@@ -29,5 +32,17 @@ func Acker(ack acknowledger) Callback {
 				logger.Debugf("Unable to acknowledge message: %s", message)
 			}
 		}
+	}
+}
+
+func LatencyTracker() Callback {
+	return func(msg *kafka.Message) {
+		message, err := creator.FromBytes(msg.Value)
+		if err != nil {
+			logger.Debugf("Unable to decode message during consumer ack")
+			return
+		}
+		latency := time.Since(message.CreatedTime)
+		reporter.ConsumptionDelay(latency)
 	}
 }

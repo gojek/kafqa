@@ -12,8 +12,7 @@ type Latency struct {
 	min       uint32
 }
 
-func (l *Latency) Push(t interface{}) {
-	lt := t.(uint32)
+func (l *Latency) Push(lt uint32) {
 	length := l.Len()
 	if length < l.maxN {
 		l.latencies = append(l.latencies, lt)
@@ -37,10 +36,10 @@ func (l *Latency) trackMax(val uint32) {
 	}
 }
 
-func (l *Latency) Pop() interface{} {
+func (l *Latency) Pop() uint32 {
 	length := l.Len()
 	if length == 0 {
-		return nil
+		return 0
 	}
 	top := l.latencies[length-1]
 	l.latencies = l.latencies[:length-1]

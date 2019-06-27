@@ -77,13 +77,14 @@ func setup(appCfg config.Application) (*application, error) {
 	memStore := store.NewInMemory(traceID)
 
 	kafkaConsumer.Register(consumer.Acker(memStore))
+	kafkaConsumer.Register(consumer.LatencyTracker())
 	if appCfg.DevEnvironment() {
 		kafkaConsumer.Register(consumer.Display)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), appCfg.RunDuration())
 
-	reporter.Setup(memStore)
+	reporter.Setup(memStore, 10)
 
 	app := &application{
 		memStore:  memStore,

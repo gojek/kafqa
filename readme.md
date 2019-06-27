@@ -2,16 +2,6 @@
 
 Kafka quality analyser, measuring data loss, ops, latency
 
-### TODO
-* [ ] Compute lag (receive t - produce t)
-* [ ] Consumer
-    * [ ] listen to interrupt and kill consumer or stop with timeout
-* [ ] Add store to keep track of messages (producer) [interface]
-* [ ] Ack in store to for received messages (consumer)
-* [ ] Generate produce & consume report
-* [ ] Prometheus exporter for metrics
-* [ ] CI (vet/lint/golangci) (travis)
-
 ### Report
 
 Need to generate report which have the following information
@@ -39,8 +29,18 @@ message {
     random (size s/m/l)
 }
 ```
+### TODO
+* [ ] Generate produce & consume report
+* [ ] Prometheus exporter for metrics
+* [ ] CI (vet/lint/golangci) (travis)
+* [ ] Generate Random consumer group and topic id
 
 ### Done:
 * [X] convert fmt to log
 * [X] Add timestamp to kafka message
 * [X] Makefile
+* [X] Compute lag (receive t - produce t)
+* [X] Consumer
+    * [X] listen to interrupt and kill consumer or stop with timeout
+* [X] Add store to keep track of messages (producer) [interface]
+* [X] Ack in store to for received messages (consumer)
