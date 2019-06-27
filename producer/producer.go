@@ -32,7 +32,7 @@ func (p Producer) Run() {
 		p.messages <- mBytes
 	}
 	close(p.messages)
-	logger.Debugf("produced all messages.")
+	logger.Infof("produced %d messages.", p.config.TotalMessages)
 }
 
 func (p Producer) Close() error {

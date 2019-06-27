@@ -13,7 +13,8 @@ type storeReporter interface {
 
 type reporter struct {
 	*Latency
-	srep storeReporter
+	srep  storeReporter
+	start time.Time
 }
 
 var rep reporter
@@ -22,6 +23,7 @@ func Setup(sr storeReporter, maxNLatency int) {
 	rep = reporter{
 		srep:    sr,
 		Latency: NewLatencyReporter(maxNLatency),
+		start:   time.Now(),
 	}
 }
 
@@ -41,6 +43,7 @@ func GenerateReport() {
 	report.Time = Time{
 		MinConsumption: rep.Latency.Min(),
 		MaxConsumption: rep.Latency.Max(),
+		AppRun:         time.Since(rep.start),
 	}
 	fmt.Printf("Report:\n%s\n", report.String())
 }

@@ -13,18 +13,20 @@ import (
 )
 
 type Consumer struct {
-	config config.Consumer
-	*kafka.Consumer
+	config    config.Consumer
+	consumers []*kafka.Consumer
 	sync.WaitGroup
 	messages  chan *kafka.Message
 	callbacks []Callback
 }
 
 func (c *Consumer) Run(ctx context.Context) {
-	c.Add(2)
+	c.Add(c.config.Concurrency * 2)
 	logger.Debugf("running consumer on brokers: %s, subscribed to: %s", c.config.KafkaBrokers, c.config.Topic)
-	go c.processor(ctx)
-	go c.consumerWorker(ctx)
+	for i, cons := range c.consumers {
+		go c.consumerWorker(ctx, cons, i)
+		go c.processor(ctx)
+	}
 }
 
 func (c *Consumer) Register(cb Callback) {
@@ -46,12 +48,12 @@ func (c *Consumer) processor(ctx context.Context) {
 	}
 }
 
-func (c *Consumer) consumerWorker(ctx context.Context) {
+func (c *Consumer) consumerWorker(ctx context.Context, cons *kafka.Consumer, id int) {
 	defer c.Done()
 
 	for {
-		logger.Debugf("polling kafka for messages... with timeout %v", c.config.PollTimeout())
-		msg, err := c.ReadMessage(c.config.PollTimeout())
+		logger.Debugf("[consumer-%d] polling kafka for messages... with timeout %v", id, c.config.PollTimeout())
+		msg, err := cons.ReadMessage(c.config.PollTimeout())
 		if err != nil {
 			kerr, ok := err.(kafka.Error)
 			if ok && kerr.Code() != kafka.ErrTimedOut {
@@ -79,22 +81,28 @@ func (c *Consumer) consumerWorker(ctx context.Context) {
 func (c *Consumer) Close() {
 	logger.Infof("closing consumer...")
 	c.Wait()
-	c.Consumer.Close()
+	for _, cons := range c.consumers {
+		cons.Close()
+	}
 }
 
 func New(cfg config.Consumer) (*Consumer, error) {
-	cons, err := kafka.NewConsumer(cfg.KafkaConfig())
-	if err != nil {
-		return nil, fmt.Errorf("error creating consumer: %v", err)
-	}
-	err = cons.SubscribeTopics([]string{cfg.Topic}, nil)
-	if err != nil {
-		return nil, fmt.Errorf("error subscribing to topic: %v", err)
+	var consumers []*kafka.Consumer
+	for i := 0; i < cfg.Concurrency; i++ {
+		cons, err := kafka.NewConsumer(cfg.KafkaConfig())
+		if err != nil {
+			return nil, fmt.Errorf("error creating consumer: %v", err)
+		}
+		err = cons.SubscribeTopics([]string{cfg.Topic}, nil)
+		if err != nil {
+			return nil, fmt.Errorf("error subscribing to topic: %v", err)
+		}
+		consumers = append(consumers, cons)
 	}
 
 	return &Consumer{
-		Consumer: cons,
-		config:   cfg,
-		messages: make(chan *kafka.Message, 100),
+		consumers: consumers,
+		config:    cfg,
+		messages:  make(chan *kafka.Message, 100),
 	}, nil
 }

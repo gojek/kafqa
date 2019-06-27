@@ -28,6 +28,9 @@ message {
     timestamp
     random (size s/m/l)
 }
+
+
+You could customise the configuration
 ```
 ### TODO
 * [ ] Generate produce & consume report
