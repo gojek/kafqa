@@ -2,21 +2,22 @@
 
 Kafka quality analyser, measuring data loss, ops, latency
 
+### Running
+* ensure go modules is enabled GO111MODULES=on if part of GOPATH and having old go version.
+* ensure kafka broker mentioned in config is up.
+
+```
+source kafkqa.env && go build && ./kafkqa
+```
+* run `make` to run tests and linting
+
 ### Report
 
-Need to generate report which have the following information
+Tool generates report which contains the following information.
 
-latency:
- * 99, 95, percentiles of latency (msg received)
- * average, min, max of latency (msg received)
-
-failures:
- * publish to kafka
- * data loss
-
-* change in brokers (dns, addition/deletion of brokers) / metadata, consumer rebalance
-* total messages success and failure %
-* TPS ( m/5m/10m )
+* latency: average, min, max of latency (consumption till msg received)
+* Total messages sent, received and lost
+* App run time
 
 ### Data
 
@@ -28,15 +29,18 @@ message {
     timestamp
     random (size s/m/l)
 }
-
-
-You could customise the configuration
 ```
-### TODO
-* [ ] Generate produce & consume report
+
+Configuration of application is customisable with `kafkq.env` eg: tweak the concurrency of producers/consumers.
+
+### Todo
 * [ ] Prometheus exporter for metrics
 * [ ] CI (vet/lint/golangci) (travis)
-* [ ] Generate Random consumer group and topic id
+* [ ] Generate Random consumer group and topic id (for development)
+* [ ] Capture throughput metrics
+* [ ] measure % of data loss, average of latency
+* [ ] Add more metrics on messages which're lost (ID/Sequence)
+
 
 ### Done:
 * [X] convert fmt to log
@@ -47,3 +51,4 @@ You could customise the configuration
     * [X] listen to interrupt and kill consumer or stop with timeout
 * [X] Add store to keep track of messages (producer) [interface]
 * [X] Ack in store to for received messages (consumer)
+* [X] Generate produce & consume basic report
