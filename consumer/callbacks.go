@@ -37,8 +37,8 @@ func Acker(ack acknowledger) Callback {
 	}
 }
 
-//TODO: could reuse this for produce ack time
 func LatencyTracker() Callback {
+	// TODO: could reuse this for produce ack time
 	return func(msg *kafka.Message) {
 		message, err := creator.FromBytes(msg.Value)
 		if err != nil {

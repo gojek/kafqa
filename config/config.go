@@ -27,8 +27,8 @@ type Producer struct {
 	FlushTimeoutMs int    `split_words:"true" default:"2000"`
 }
 
-// TODO: remove tags and load with split words while processing
 type Consumer struct {
+	// TODO: remove tags and load with split words while processing
 	Topic         string `default:"kafqa_test" envconfig:"KAFKA_TOPIC"`
 	Concurrency   int    `default:"20"`
 	KafkaBrokers  string `split_words:"true" required:"true"`

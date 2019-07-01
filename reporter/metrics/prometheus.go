@@ -56,7 +56,12 @@ func Setup(cfg config.Prometheus) {
 
 		mux := http.NewServeMux()
 		mux.Handle("/metrics", promhttp.Handler())
-		go http.ListenAndServe(cfg.BindPort(), mux)
+		go func() {
+			err := http.ListenAndServe(cfg.BindPort(), mux)
+			if err != nil {
+				logger.Errorf("Error while binding to %s port, %v", cfg.BindPort(), err)
+			}
+		}()
 		logger.Debugf("Enabled prometheus at /metris port: %s", cfg.BindPort())
 	}
 }
