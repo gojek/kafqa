@@ -6,6 +6,7 @@ import (
 	"github.com/gojekfarm/kafqa/creator"
 	"github.com/gojekfarm/kafqa/logger"
 	"github.com/gojekfarm/kafqa/reporter"
+	"github.com/gojekfarm/kafqa/reporter/metrics"
 	"github.com/gojekfarm/kafqa/store"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
@@ -31,10 +32,12 @@ func Acker(ack acknowledger) Callback {
 			if err != nil {
 				logger.Debugf("Unable to acknowledge message: %s", message)
 			}
+			metrics.AcknowledgedMessage(message)
 		}
 	}
 }
 
+//TODO: could reuse this for produce ack time
 func LatencyTracker() Callback {
 	return func(msg *kafka.Message) {
 		message, err := creator.FromBytes(msg.Value)

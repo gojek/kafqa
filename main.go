@@ -84,7 +84,7 @@ func setup(appCfg config.Application) (*application, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), appCfg.RunDuration())
 
-	reporter.Setup(memStore, 10)
+	reporter.Setup(memStore, 10, appCfg.Reporter)
 
 	app := &application{
 		memStore:  memStore,

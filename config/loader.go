@@ -1,6 +1,10 @@
 package config
 
-import "github.com/kelseyhightower/envconfig"
+import (
+	"fmt"
+
+	"github.com/kelseyhightower/envconfig"
+)
 
 var application Application
 
@@ -17,6 +21,10 @@ func Load() error {
 	if err != nil {
 		return err
 	}
-
+	err = envconfig.Process("PROMETHEUS", &application.Reporter.Prometheus)
+	if err != nil {
+		return err
+	}
+	fmt.Println(application.Reporter)
 	return nil
 }

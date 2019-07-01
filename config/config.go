@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"time"
 
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
@@ -10,6 +11,7 @@ type Application struct {
 	Producer
 	Consumer
 	Config
+	Reporter
 }
 
 type Config struct {
@@ -25,6 +27,7 @@ type Producer struct {
 	FlushTimeoutMs int    `split_words:"true" default:"2000"`
 }
 
+// TODO: remove tags and load with split words while processing
 type Consumer struct {
 	Topic         string `default:"kafqa_test" envconfig:"KAFKA_TOPIC"`
 	Concurrency   int    `default:"20"`
@@ -32,6 +35,19 @@ type Consumer struct {
 	GroupID       string `split_words:"true" default:"kafqa_test_consumer"`
 	OffsetReset   string `split_words:"true" default:"earliest"`
 	PollTimeoutMs int64  `split_words:"true" default:"500"`
+}
+
+type Prometheus struct {
+	Enabled bool `default:"false"`
+	Port    int  `default:"9999"`
+}
+
+func (p Prometheus) BindPort() string {
+	return fmt.Sprintf("0.0.0.0:%d", p.Port)
+}
+
+type Reporter struct {
+	Prometheus
 }
 
 func App() Application {

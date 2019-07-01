@@ -50,7 +50,7 @@ services:
   prometheus:
     image: prom/prometheus:v2.1.0
     volumes:
-      - ./prometheus/:/etc/prometheus/
+      - ./reporter/prometheus/:/etc/prometheus/
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'

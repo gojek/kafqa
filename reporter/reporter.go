@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gojekfarm/kafqa/config"
+	"github.com/gojekfarm/kafqa/reporter/metrics"
 	"github.com/gojekfarm/kafqa/store"
 )
 
@@ -19,12 +21,13 @@ type reporter struct {
 
 var rep reporter
 
-func Setup(sr storeReporter, maxNLatency int) {
+func Setup(sr storeReporter, maxNLatency int, cfg config.Reporter) {
 	rep = reporter{
 		srep:    sr,
 		Latency: NewLatencyReporter(maxNLatency),
 		start:   time.Now(),
 	}
+	metrics.Setup(cfg.Prometheus)
 }
 
 func ConsumptionDelay(t time.Duration) {
