@@ -3,6 +3,7 @@ package producer
 import (
 	"sync"
 
+	"github.com/gojekfarm/kafqa/callback"
 	"github.com/gojekfarm/kafqa/config"
 	"github.com/gojekfarm/kafqa/logger"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
@@ -12,12 +13,20 @@ type msgCreator interface {
 	NewBytes() ([]byte, error)
 }
 
+type kafkaProducer interface {
+	Produce(*kafka.Message, chan kafka.Event) error
+	Flush(int) int
+	Events() chan kafka.Event
+	Close()
+}
+
 type Producer struct {
-	*kafka.Producer
+	kafkaProducer
 	config   config.Producer
 	messages chan []byte
 	msgCreator
-	wg *sync.WaitGroup
+	wg        *sync.WaitGroup
+	callbacks []callback.Callback
 }
 
 func (p Producer) Run() {
@@ -35,10 +44,14 @@ func (p Producer) Run() {
 	logger.Infof("produced %d messages.", p.config.TotalMessages)
 }
 
+func (p *Producer) Register(cb callback.Callback) {
+	p.callbacks = append(p.callbacks, cb)
+}
+
 func (p Producer) Close() error {
 	logger.Infof("closing producer...")
 	p.Flush(p.config.FlushTimeoutMs)
-	p.Producer.Close()
+	p.kafkaProducer.Close()
 	p.wg.Wait()
 	logger.Infof("closed producer...")
 	return nil
@@ -58,10 +71,14 @@ func (p Producer) ProduceWorker() {
 			TopicPartition: kafka.TopicPartition{Topic: &p.config.Topic, Partition: kafka.PartitionAny},
 			Value:          msg,
 		}
-		if err := p.Producer.Produce(&kafkaMsg, nil); err != nil {
+		if err := p.kafkaProducer.Produce(&kafkaMsg, nil); err != nil {
 			logger.Errorf("Error producing message to kafka: %v", err)
+		} else {
+			//TODO: introduce configured delay here
+			for _, cb := range p.callbacks {
+				cb(&kafkaMsg)
+			}
 		}
-		//TODO: introduce configured delay here
 	}
 }
 
@@ -72,10 +89,10 @@ func New(prodCfg config.Producer, mc msgCreator) (*Producer, error) {
 		return nil, err
 	}
 	return &Producer{
-		config:     prodCfg,
-		Producer:   p,
-		messages:   make(chan []byte, 1000),
-		wg:         &sync.WaitGroup{},
-		msgCreator: mc,
+		config:        prodCfg,
+		kafkaProducer: p,
+		messages:      make(chan []byte, 1000),
+		wg:            &sync.WaitGroup{},
+		msgCreator:    mc,
 	}, nil
 }

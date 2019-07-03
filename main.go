@@ -9,6 +9,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/gojekfarm/kafqa/callback"
 	"github.com/gojekfarm/kafqa/config"
 	"github.com/gojekfarm/kafqa/consumer"
 	"github.com/gojekfarm/kafqa/creator"
@@ -76,10 +77,10 @@ func setup(appCfg config.Application) (*application, error) {
 	traceID := func(t store.Trace) string { return t.Message.ID }
 	memStore := store.NewInMemory(traceID)
 
-	kafkaConsumer.Register(consumer.Acker(memStore))
-	kafkaConsumer.Register(consumer.LatencyTracker())
+	kafkaConsumer.Register(callback.Acker(memStore))
+	kafkaConsumer.Register(callback.LatencyTracker())
 	if appCfg.DevEnvironment() {
-		kafkaConsumer.Register(consumer.Display)
+		kafkaConsumer.Register(callback.Display)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), appCfg.RunDuration())

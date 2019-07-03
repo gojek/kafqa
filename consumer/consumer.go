@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gojekfarm/kafqa/callback"
 	"github.com/gojekfarm/kafqa/config"
 	"github.com/gojekfarm/kafqa/logger"
 
@@ -17,7 +18,7 @@ type Consumer struct {
 	consumers []*kafka.Consumer
 	sync.WaitGroup
 	messages  chan *kafka.Message
-	callbacks []Callback
+	callbacks []callback.Callback
 }
 
 func (c *Consumer) Run(ctx context.Context) {
@@ -29,7 +30,7 @@ func (c *Consumer) Run(ctx context.Context) {
 	}
 }
 
-func (c *Consumer) Register(cb Callback) {
+func (c *Consumer) Register(cb callback.Callback) {
 	c.callbacks = append(c.callbacks, cb)
 }
 
