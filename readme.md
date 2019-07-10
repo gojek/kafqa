@@ -19,6 +19,22 @@ Tool generates report which contains the following information.
 * Total messages sent, received and lost
 * App run time
 
+```
++---+--------------------------------+--------------+
+|   |          DESCRIPTION           |    VALUE     |
++---+--------------------------------+--------------+
+| 1 | Messages Lost                  |        49995 |
+| 2 | Messages Sent                  |        50000 |
+| 3 | Messages Received              |            5 |
+| 3 | Min Consumption Latency Millis |         7446 |
+| 3 | Max Consumption Latency Millis |         7461 |
+| 3 | App Run Time                   | 8.801455502s |
++---+--------------------------------+--------------+
+```
+
+### Dashboard
+prometheus metrics can be viewed in grafana by importing the dashboard in `scripts/dasbhoard`
+
 ### Data
 
 Message format sent over kafka
