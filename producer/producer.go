@@ -2,6 +2,7 @@ package producer
 
 import (
 	"sync"
+	"time"
 
 	"github.com/gojekfarm/kafqa/callback"
 	"github.com/gojekfarm/kafqa/config"
@@ -78,6 +79,7 @@ func (p Producer) ProduceWorker() {
 			for _, cb := range p.callbacks {
 				cb(&kafkaMsg)
 			}
+			time.Sleep(10)
 		}
 	}
 }

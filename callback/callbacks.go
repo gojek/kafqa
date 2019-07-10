@@ -33,19 +33,27 @@ func Acker(ack acknowledger) Callback {
 				logger.Debugf("Unable to acknowledge message: %s", message)
 			}
 			metrics.AcknowledgedMessage(message)
+			metrics.ConsumerLatency(time.Since(message.CreatedTime))
 		}
 	}
 }
 
-func LatencyTracker() Callback {
-	// TODO: could reuse this for produce ack time
-	return func(msg *kafka.Message) {
-		message, err := creator.FromBytes(msg.Value)
-		if err != nil {
-			logger.Debugf("Unable to decode message during consumer ack")
-			return
-		}
-		latency := time.Since(message.CreatedTime)
-		reporter.ConsumptionDelay(latency)
+func MessageSent(msg *kafka.Message) {
+	message, err := creator.FromBytes(msg.Value)
+	if err != nil {
+		logger.Debugf("Unable to decode message during message sent callback")
+	} else {
+		metrics.SentMessage(message)
+		metrics.ProduceLatency(time.Since(message.CreatedTime))
 	}
+}
+
+func LatencyTracker(msg *kafka.Message) {
+	message, err := creator.FromBytes(msg.Value)
+	if err != nil {
+		logger.Debugf("Unable to decode message during consumer ack")
+		return
+	}
+	latency := time.Since(message.CreatedTime)
+	reporter.ConsumptionDelay(latency)
 }

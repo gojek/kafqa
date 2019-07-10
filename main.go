@@ -69,6 +69,8 @@ func setup(appCfg config.Application) (*application, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error creating producer: %v", err)
 	}
+	kafkaProducer.Register(callback.MessageSent)
+
 	kafkaConsumer, err := consumer.New(appCfg.Consumer)
 	if err != nil {
 		return nil, fmt.Errorf("error creating consumer: %v", err)
@@ -78,7 +80,7 @@ func setup(appCfg config.Application) (*application, error) {
 	memStore := store.NewInMemory(traceID)
 
 	kafkaConsumer.Register(callback.Acker(memStore))
-	kafkaConsumer.Register(callback.LatencyTracker())
+	kafkaConsumer.Register(callback.LatencyTracker)
 	if appCfg.DevEnvironment() {
 		kafkaConsumer.Register(callback.Display)
 	}
