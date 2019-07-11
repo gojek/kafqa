@@ -14,6 +14,13 @@ type Trace struct {
 
 type TraceID func(Trace) string
 
+type MsgStore interface {
+	Acknowledge(msg Trace) error
+	Track(msg Trace) error
+	Unacknowledged() ([]string, error)
+	Result() Result
+}
+
 type InMemory struct {
 	pending map[string]Trace
 	sync.Mutex

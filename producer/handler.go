@@ -12,7 +12,7 @@ import (
 type Handler struct {
 	wg       *sync.WaitGroup
 	events   <-chan kafka.Event
-	memStore *store.InMemory
+	msgStore store.MsgStore
 }
 
 func (h *Handler) Handle() {
@@ -29,7 +29,7 @@ func (h *Handler) Handle() {
 					logger.Errorf("Decoding Message failed: %v", ev.TopicPartition)
 				}
 				trace := store.Trace{Message: msg, TopicPartition: ev.TopicPartition}
-				err = h.memStore.Track(trace)
+				err = h.msgStore.Track(trace)
 				if err != nil {
 					logger.Errorf("Couldn't track message: %v", ev.TopicPartition)
 				}
@@ -40,6 +40,6 @@ func (h *Handler) Handle() {
 	}
 }
 
-func NewHandler(events <-chan kafka.Event, wg *sync.WaitGroup, memStore *store.InMemory) *Handler {
-	return &Handler{events: events, wg: wg, memStore: memStore}
+func NewHandler(events <-chan kafka.Event, wg *sync.WaitGroup, msgStore store.MsgStore) *Handler {
+	return &Handler{events: events, wg: wg, msgStore: msgStore}
 }

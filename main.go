@@ -20,7 +20,7 @@ import (
 )
 
 type application struct {
-	memStore *store.InMemory
+	msgStore store.MsgStore
 	*producer.Producer
 	*consumer.Consumer
 	*producer.Handler
@@ -77,9 +77,14 @@ func setup(appCfg config.Application) (*application, error) {
 	}
 
 	traceID := func(t store.Trace) string { return t.Message.ID }
-	memStore := store.NewInMemory(traceID)
+	var ms store.MsgStore
+	if appCfg.Store.Type == "redis" {
+		ms = store.NewRedis(appCfg.Store.RedisHost, appCfg.Store.RunID, traceID)
+	} else {
+		ms = store.NewInMemory(traceID)
+	}
 
-	kafkaConsumer.Register(callback.Acker(memStore))
+	kafkaConsumer.Register(callback.Acker(ms))
 	kafkaConsumer.Register(callback.LatencyTracker)
 	if appCfg.DevEnvironment() {
 		kafkaConsumer.Register(callback.Display)
@@ -87,13 +92,13 @@ func setup(appCfg config.Application) (*application, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), appCfg.RunDuration())
 
-	reporter.Setup(memStore, 10, appCfg.Reporter)
+	reporter.Setup(ms, 10, appCfg.Reporter)
 
 	app := &application{
-		memStore:  memStore,
+		msgStore:  ms,
 		Producer:  kafkaProducer,
 		Consumer:  kafkaConsumer,
-		Handler:   producer.NewHandler(kafkaProducer.Events(), &wg, memStore),
+		Handler:   producer.NewHandler(kafkaProducer.Events(), &wg, ms),
 		WaitGroup: &wg,
 		ctx:       ctx,
 		cancel:    cancel,

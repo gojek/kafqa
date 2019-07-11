@@ -9,7 +9,11 @@ import (
 var application Application
 
 func Load() error {
-	err := envconfig.Process("PRODUCER", &application.Producer)
+	err := envconfig.Process("STORE", &application.Store)
+	if err != nil {
+		return err
+	}
+	err = envconfig.Process("PRODUCER", &application.Producer)
 	if err != nil {
 		return err
 	}

@@ -12,6 +12,7 @@ type Application struct {
 	Consumer
 	Config
 	Reporter
+	Store
 }
 
 type Config struct {
@@ -40,6 +41,12 @@ type Consumer struct {
 type Prometheus struct {
 	Enabled bool `default:"false"`
 	Port    int  `default:"9999"`
+}
+
+type Store struct {
+	Type      string `default:"memory"`
+	RunID     string `split_words:"true"`
+	RedisHost string `split_words:"true"`
 }
 
 func (p Prometheus) BindPort() string {
