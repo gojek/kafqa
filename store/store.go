@@ -39,13 +39,13 @@ func (ms *InMemory) Track(msg Trace) error {
 	return nil
 }
 
-func (ms *InMemory) Unacknowledged() ([]Trace, error) {
+func (ms *InMemory) Unacknowledged() ([]string, error) {
 	ms.Lock()
 	defer ms.Unlock()
 
-	var msgs []Trace
+	var msgs []string
 	for _, v := range ms.pending {
-		msgs = append(msgs, v)
+		msgs = append(msgs, ms.TraceID(v))
 	}
 	return msgs, nil
 }
