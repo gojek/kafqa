@@ -49,7 +49,7 @@ func (s *RedisSuite) TeardownTest() {
 
 func (s *RedisSuite) TestShouldAddMessageStatusesToRedisOnTrack() {
 	t := s.T()
-	cmd := s.testClient.SCard("test_namespace:published:ids")
+	cmd := s.testClient.SCard("test_namespace:tracked:ids")
 	require.Equal(t, int64(len(s.messages)), cmd.Val())
 }
 
@@ -94,6 +94,13 @@ func (s *RedisSuite) TestRedisShouldRemoveAcknowledgedMessages() {
 	for _, m := range pending {
 		assert.Contains(t, []string{"2", "4"}, m)
 	}
+}
+
+func (s *RedisSuite) TestFetchFromRedisShouldBeSourceForResult() {
+	t := s.T()
+	result := s.store.Result()
+	require.Equal(t, int64(4), result.Tracked)
+	require.Equal(t, int64(0), result.Acknowledged)
 }
 
 func TestRedisStore(t *testing.T) {

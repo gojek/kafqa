@@ -12,23 +12,37 @@ type Redis struct {
 	redisdb   *redis.Client
 }
 
+func (rs *Redis) keyFor(kind string) string {
+	return fmt.Sprintf("%s:%s:ids", rs.namespace, kind)
+}
+
 func (rs *Redis) Acknowledge(msg Trace) error {
-	cmd := rs.redisdb.SAdd(fmt.Sprintf("%s:acked:ids", rs.namespace), rs.TraceID(msg))
+	cmd := rs.redisdb.SAdd(rs.keyFor("acked"), rs.TraceID(msg))
 	return cmd.Err()
 }
 
 func (rs *Redis) Track(msg Trace) error {
-	cmd := rs.redisdb.SAdd(fmt.Sprintf("%s:published:ids", rs.namespace), rs.TraceID(msg))
+	cmd := rs.redisdb.SAdd(rs.keyFor("tracked"), rs.TraceID(msg))
 	return cmd.Err()
 }
 
 func (rs *Redis) Unacknowledged() ([]string, error) {
-	cmd := rs.redisdb.SDiff(fmt.Sprintf("%s:published:ids", rs.namespace), fmt.Sprintf("%s:acked:ids", rs.namespace))
+	cmd := rs.redisdb.SDiff(rs.keyFor("tracked"), rs.keyFor("acked"))
 	return cmd.Val(), cmd.Err()
 }
 
 func (rs *Redis) Result() Result {
-	return Result{}
+	cmd := rs.redisdb.SCard(rs.keyFor("tracked"))
+	if cmd.Err() != nil {
+		return Result{}
+	}
+	numTracked := cmd.Val()
+	cmd = rs.redisdb.SCard(rs.keyFor("acked"))
+	if cmd.Err() != nil {
+		return Result{}
+	}
+	numAcked := cmd.Val()
+	return Result{Tracked: numTracked, Acknowledged: numAcked}
 }
 
 func NewRedis(redisaddr, namespace string, ti TraceID) *Redis {
