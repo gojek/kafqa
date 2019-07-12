@@ -21,6 +21,7 @@ type Config struct {
 }
 
 type Producer struct {
+	Enabled        bool
 	Topic          string `default:"kafqa_test" envconfig:"KAFKA_TOPIC"`
 	Concurrency    int    `default:"100"`
 	TotalMessages  uint64 `split_words:"true" default:"10000"`
@@ -30,12 +31,21 @@ type Producer struct {
 
 type Consumer struct {
 	// TODO: remove tags and load with split words while processing
-	Topic         string `default:"kafqa_test" envconfig:"KAFKA_TOPIC"`
-	Concurrency   int    `default:"20"`
-	KafkaBrokers  string `split_words:"true" required:"true"`
-	GroupID       string `split_words:"true" default:"kafqa_test_consumer"`
-	OffsetReset   string `split_words:"true" default:"earliest"`
-	PollTimeoutMs int64  `split_words:"true" default:"500"`
+	Topic            string `default:"kafqa_test" envconfig:"KAFKA_TOPIC"`
+	Concurrency      int    `default:"20"`
+	KafkaBrokers     string `split_words:"true" required:"true"`
+	GroupID          string `split_words:"true" default:"kafqa_test_consumer"`
+	OffsetReset      string `split_words:"true" default:"earliest"`
+	PollTimeoutMs    int64  `split_words:"true" default:"500"`
+	SecurityProtocol string `split_words:"true" default:"PLAINTEXT"`
+	ssl              SSL
+}
+
+type SSL struct {
+	CALocation          string `split_words:"true"`
+	CertificateLocation string `split_words:"true"`
+	KeyLocation         string `split_words:"true"`
+	KeyPassword         string `split_words:"true"`
 }
 
 type Prometheus struct {
@@ -81,6 +91,10 @@ func (c Consumer) KafkaConfig() *kafka.ConfigMap {
 		KafkaBootstrapServerKey: c.KafkaBrokers,
 		ConsumerOffsetResetKey:  c.OffsetReset,
 		ConsumerGroupIDKey:      c.GroupID,
+		SecurityProtocol:        c.SecurityProtocol,
+		SSLCALocation:           c.ssl.CALocation,
+		SSLKeyLocation:          c.ssl.KeyLocation,
+		SSLKeyPassword:          c.ssl.KeyPassword,
 	}
 }
 

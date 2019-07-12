@@ -29,6 +29,13 @@ func Load() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(application.Reporter)
+
+	var consumerSslCfg SSL
+	err = envconfig.Process("CONSUMER", &consumerSslCfg)
+	if err != nil {
+		return err
+	}
+	application.Consumer.ssl = consumerSslCfg
+	fmt.Println(application.Consumer)
 	return nil
 }
