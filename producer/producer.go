@@ -2,7 +2,6 @@ package producer
 
 import (
 	"sync"
-	"time"
 
 	"github.com/gojekfarm/kafqa/callback"
 	"github.com/gojekfarm/kafqa/config"
@@ -33,6 +32,7 @@ type Producer struct {
 func (p Producer) Run() {
 	go p.runProducers()
 	var i uint64
+	//TODO: move it closer to goroutine and add once spinned up
 	p.wg.Add(p.config.Concurrency)
 	logger.Debugf("started producing to chan....")
 
@@ -52,6 +52,7 @@ func (p *Producer) Register(cb callback.Callback) {
 func (p Producer) Close() error {
 	logger.Infof("closing producer...")
 	p.Flush(p.config.FlushTimeoutMs)
+	//TODO: sync close properly
 	p.kafkaProducer.Close()
 	p.wg.Wait()
 	logger.Infof("closed producer...")
@@ -79,14 +80,12 @@ func (p Producer) ProduceWorker() {
 			for _, cb := range p.callbacks {
 				cb(&kafkaMsg)
 			}
-			time.Sleep(10)
 		}
 	}
 }
 
 func New(prodCfg config.Producer, mc msgCreator) (*Producer, error) {
-	//TODO: kafka config keys could be consts
-	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": prodCfg.KafkaBrokers})
+	p, err := kafka.NewProducer(prodCfg.KafkaConfig())
 	if err != nil {
 		return nil, err
 	}

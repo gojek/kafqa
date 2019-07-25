@@ -1,8 +1,6 @@
 package config
 
 import (
-	"fmt"
-
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -35,7 +33,12 @@ func Load() error {
 	if err != nil {
 		return err
 	}
+	var producerSslCfg SSL
+	err = envconfig.Process("PRODUCER", &producerSslCfg)
+	if err != nil {
+		return err
+	}
 	application.Consumer.ssl = consumerSslCfg
-	fmt.Println(application.Consumer)
+	application.Producer.ssl = producerSslCfg
 	return nil
 }

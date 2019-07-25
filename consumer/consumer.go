@@ -57,8 +57,8 @@ func (c *Consumer) consumerWorker(ctx context.Context, cons *kafka.Consumer, id 
 		msg, err := cons.ReadMessage(c.config.PollTimeout())
 		if err != nil {
 			kerr, ok := err.(kafka.Error)
-			if ok && kerr.Code() != kafka.ErrTimedOut {
-				logger.Errorf("error consuming messages: %+v timeout: %v", kerr, c.config.PollTimeout())
+			if ok {
+				logger.Errorf("[kafka error] error consuming messages: %+v timeout: %v", kerr, c.config.PollTimeout())
 			} else {
 				logger.Errorf("error consuming messages: %+v timeout: %v", err, c.config.PollTimeout())
 			}

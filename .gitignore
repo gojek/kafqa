@@ -2,3 +2,4 @@ kafqa
 vendor
 out
 data
+local.env

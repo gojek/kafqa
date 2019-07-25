@@ -21,12 +21,14 @@ type Config struct {
 }
 
 type Producer struct {
-	Enabled        bool
-	Topic          string `default:"kafqa_test" envconfig:"KAFKA_TOPIC"`
-	Concurrency    int    `default:"100"`
-	TotalMessages  uint64 `split_words:"true" default:"10000"`
-	KafkaBrokers   string `split_words:"true" required:"true"`
-	FlushTimeoutMs int    `split_words:"true" default:"2000"`
+	Enabled          bool
+	Topic            string `default:"kafqa_test" envconfig:"KAFKA_TOPIC"`
+	Concurrency      int    `default:"100"`
+	TotalMessages    uint64 `split_words:"true" default:"10000"`
+	KafkaBrokers     string `split_words:"true" required:"true"`
+	FlushTimeoutMs   int    `split_words:"true" default:"2000"`
+	SecurityProtocol string `split_words:"true" default:"PLAINTEXT"`
+	ssl              SSL
 }
 
 type Consumer struct {
@@ -86,6 +88,17 @@ func (a Application) DevEnvironment() bool {
 	return a.Config.Environment == "development"
 }
 
+func (p Producer) KafkaConfig() *kafka.ConfigMap {
+	return &kafka.ConfigMap{
+		KafkaBootstrapServerKey: p.KafkaBrokers,
+		SecurityProtocol:        p.SecurityProtocol,
+		SSLCALocation:           p.ssl.CALocation,
+		SSLKeyLocation:          p.ssl.KeyLocation,
+		SSLKeyPassword:          p.ssl.KeyPassword,
+		SSLCertLocation:         p.ssl.CertificateLocation,
+	}
+}
+
 func (c Consumer) KafkaConfig() *kafka.ConfigMap {
 	return &kafka.ConfigMap{
 		KafkaBootstrapServerKey: c.KafkaBrokers,
@@ -95,6 +108,7 @@ func (c Consumer) KafkaConfig() *kafka.ConfigMap {
 		SSLCALocation:           c.ssl.CALocation,
 		SSLKeyLocation:          c.ssl.KeyLocation,
 		SSLKeyPassword:          c.ssl.KeyPassword,
+		SSLCertLocation:         c.ssl.CertificateLocation,
 	}
 }
 
