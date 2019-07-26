@@ -41,7 +41,7 @@ func main() {
 
 	logger.Infof("running application against %s", appCfg.Producer.KafkaBrokers)
 
-	app.Producer.Run()
+	app.Producer.Run(app.ctx)
 	app.Consumer.Run(app.ctx)
 	app.WaitGroup.Add(1)
 

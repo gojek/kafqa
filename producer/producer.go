@@ -1,6 +1,7 @@
 package producer
 
 import (
+	"context"
 	"sync"
 
 	"github.com/gojekfarm/kafqa/callback"
@@ -29,20 +30,28 @@ type Producer struct {
 	callbacks []callback.Callback
 }
 
-func (p Producer) Run() {
-	go p.runProducers()
+func (p Producer) Run(ctx context.Context) {
+	go p.runProducers(ctx)
 	var i uint64
-	//TODO: move it closer to goroutine and add once spinned up
-	p.wg.Add(p.config.Concurrency)
 	logger.Debugf("started producing to chan....")
 
-	for i = 0; i < p.config.TotalMessages; i++ {
-		//TODO: report error
-		mBytes, _ := p.msgCreator.NewBytes()
-		p.messages <- mBytes
-	}
-	close(p.messages)
-	logger.Infof("produced %d messages.", p.config.TotalMessages)
+	p.wg.Add(1)
+	go func() {
+		defer p.wg.Done()
+		defer close(p.messages)
+
+		for i = 0; i < p.config.TotalMessages; i++ {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				mBytes, _ := p.msgCreator.NewBytes()
+				p.messages <- mBytes
+			}
+		}
+		logger.Infof("produced %d messages.", p.config.TotalMessages)
+	}()
+
 }
 
 func (p *Producer) Register(cb callback.Callback) {
@@ -52,34 +61,46 @@ func (p *Producer) Register(cb callback.Callback) {
 func (p Producer) Close() error {
 	logger.Infof("closing producer...")
 	p.Flush(p.config.FlushTimeoutMs)
-	//TODO: sync close properly
-	p.kafkaProducer.Close()
 	p.wg.Wait()
+	p.kafkaProducer.Close()
 	logger.Infof("closed producer...")
 	return nil
 }
 
-func (p Producer) runProducers() {
+func (p Producer) runProducers(ctx context.Context) {
 	for i := 0; i < p.config.Concurrency; i++ {
 		logger.Debugf("running producer %d on brokers: %s for topic %s", i, p.config.KafkaBrokers, p.config.Topic)
-		go p.ProduceWorker()
+		go p.ProduceWorker(ctx)
+		p.wg.Add(1)
 	}
 }
 
-func (p Producer) ProduceWorker() {
+func (p Producer) ProduceWorker(ctx context.Context) {
 	defer p.wg.Done()
-	for msg := range p.messages {
-		kafkaMsg := kafka.Message{
-			TopicPartition: kafka.TopicPartition{Topic: &p.config.Topic, Partition: kafka.PartitionAny},
-			Value:          msg,
-		}
-		if err := p.kafkaProducer.Produce(&kafkaMsg, nil); err != nil {
-			logger.Errorf("Error producing message to kafka: %v", err)
-		} else {
-			//TODO: introduce configured delay here
-			for _, cb := range p.callbacks {
-				cb(&kafkaMsg)
+	for {
+		select {
+		case msg, ok := <-p.messages:
+			if !ok {
+				return
 			}
+			p.produceMessage(msg)
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (p Producer) produceMessage(msg []byte) {
+	kafkaMsg := kafka.Message{
+		TopicPartition: kafka.TopicPartition{Topic: &p.config.Topic, Partition: kafka.PartitionAny},
+		Value:          msg,
+	}
+	if err := p.kafkaProducer.Produce(&kafkaMsg, nil); err != nil {
+		logger.Errorf("Error producing message to kafka: %v", err)
+	} else {
+		//TODO: introduce configured delay here
+		for _, cb := range p.callbacks {
+			cb(&kafkaMsg)
 		}
 	}
 }

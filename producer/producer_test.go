@@ -1,6 +1,7 @@
 package producer
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"testing"
@@ -24,9 +25,11 @@ func TestShouldCallRegisteredCallbacks(t *testing.T) {
 		msgCreator:    creator,
 	}
 	var callbackCalled bool
+	ch := make(chan struct{}, 1)
 	call := func(msg *kafka.Message) {
 		fmt.Println("interesting....")
 		callbackCalled = true
+		ch <- struct{}{}
 	}
 	kp.Register(call)
 	creator.On("NewBytes").Return([]byte("data1"), nil).Times(1)
@@ -35,7 +38,8 @@ func TestShouldCallRegisteredCallbacks(t *testing.T) {
 	kafkaProducer.On("Flush", 0).Return(0)
 	kafkaProducer.On("Close").Return()
 
-	kp.Run()
+	kp.Run(context.Background())
+	<-ch
 	kp.Close()
 
 	creator.AssertExpectations(t)

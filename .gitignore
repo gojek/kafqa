@@ -3,3 +3,4 @@ vendor
 out
 data
 local.env
+.idea
