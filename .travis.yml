@@ -1,0 +1,35 @@
+language: go
+
+go: 1.12.5
+
+stages:
+  - test
+  - build
+
+before_install:
+  - git clone https://github.com/edenhill/librdkafka.git
+  - cd librdkafka
+  - ./configure --prefix /usr
+  - make
+  - sudo make install
+
+before_script:
+  - cd $KAFQA_DIR
+env:
+  PRODUCER_KAFKA_BROKERS="localhost:9092"
+  CONSUMER_KAFKA_BROKERS="localhost:9092"
+  GO111MODULE=on
+  KAFQA_DIR=$(pwd)
+
+jobs:
+  include:
+    - stage: test
+      name: "Unit tests"
+      script: make test
+    - script: make check-quality
+      name: "Check code quality"
+    - script: make golangci
+      name: "Run Golangci"
+    - stage: build
+      script: make clean build
+
