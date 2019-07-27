@@ -15,10 +15,17 @@ import (
 
 type Consumer struct {
 	config    config.Consumer
-	consumers []*kafka.Consumer
+	consumers []consumer
 	wg        *sync.WaitGroup
 	callbacks []callback.Callback
 	exit      chan struct{}
+}
+
+type consumer interface {
+	SubscribeTopics([]string, kafka.RebalanceCb) error
+	ReadMessage(time.Duration) (*kafka.Message, error)
+	Close() error
+	CommitMessage(*kafka.Message) ([]kafka.TopicPartition, error)
 }
 
 func (c *Consumer) Run(ctx context.Context) {
@@ -45,7 +52,7 @@ func (c *Consumer) processor(messages <-chan *kafka.Message, id int) {
 	logger.Debugf("[processor-%d] completed.", id)
 }
 
-func (c *Consumer) consumerWorker(ctx context.Context, cons *kafka.Consumer, id int) <-chan *kafka.Message {
+func (c *Consumer) consumerWorker(ctx context.Context, cons consumer, id int) <-chan *kafka.Message {
 	messages := make(chan *kafka.Message, 1000)
 
 	go func(messages chan *kafka.Message) {
@@ -70,7 +77,7 @@ func (c *Consumer) consumerWorker(ctx context.Context, cons *kafka.Consumer, id 
 	return messages
 }
 
-func (c *Consumer) readMessage(cons *kafka.Consumer, messages chan<- *kafka.Message, id int) {
+func (c *Consumer) readMessage(cons consumer, messages chan<- *kafka.Message, id int) {
 	timeout := c.config.PollTimeout()
 	logger.Debugf("[consumer-%d] polling kafka for messages... with timeout %v", id, timeout)
 	msg, err := cons.ReadMessage(timeout)
@@ -115,7 +122,7 @@ func Register(cb callback.Callback) Option {
 }
 
 func New(cfg config.Consumer, opts ...Option) (*Consumer, error) {
-	var consumers []*kafka.Consumer
+	var consumers []consumer
 	for i := 0; i < cfg.Concurrency; i++ {
 		cons, err := kafka.NewConsumer(cfg.KafkaConfig())
 		if err != nil {
