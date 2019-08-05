@@ -45,14 +45,20 @@ func (rs *Redis) Result() Result {
 	return Result{Tracked: numTracked, Acknowledged: numAcked}
 }
 
-func NewRedis(redisaddr, namespace string, ti TraceID) *Redis {
-	return &Redis{
+func NewRedis(redisaddr, namespace string, ti TraceID) (*Redis, error) {
+	cli := redis.NewClient(&redis.Options{
+		Addr:     redisaddr,
+		Password: "",
+		DB:       0,
+	})
+	redisCli := &Redis{
 		namespace: namespace,
-		redisdb: redis.NewClient(&redis.Options{
-			Addr:     redisaddr,
-			Password: "",
-			DB:       0,
-		}),
-		TraceID: ti,
+		redisdb:   cli,
+		TraceID:   ti,
 	}
+	_, err := cli.Ping().Result()
+	if err != nil {
+		return nil, err
+	}
+	return redisCli, nil
 }

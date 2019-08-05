@@ -3,6 +3,7 @@ package store
 import (
 	"sync"
 
+	"github.com/gojekfarm/kafqa/config"
 	"github.com/gojekfarm/kafqa/creator"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
@@ -72,4 +73,15 @@ func NewInMemory(ti TraceID) *InMemory {
 		Mutex:   sync.Mutex{},
 		TraceID: ti,
 	}
+}
+
+func New(cfg config.Store, traceID TraceID) (MsgStore, error) {
+	if cfg.Type == "redis" {
+		ms, err := NewRedis(cfg.RedisHost, cfg.RunID, traceID)
+		if err != nil {
+			return nil, err
+		}
+		return ms, nil
+	}
+	return NewInMemory(traceID), nil
 }

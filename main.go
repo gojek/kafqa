@@ -77,11 +77,9 @@ func setup(appCfg config.Application) (*application, error) {
 	}
 
 	traceID := func(t store.Trace) string { return t.Message.ID }
-	var ms store.MsgStore
-	if appCfg.Store.Type == "redis" {
-		ms = store.NewRedis(appCfg.Store.RedisHost, appCfg.Store.RunID, traceID)
-	} else {
-		ms = store.NewInMemory(traceID)
+	ms, err := store.New(appCfg.Store, traceID)
+	if err != nil {
+		return nil, err
 	}
 
 	kafkaConsumer.Register(callback.Acker(ms))

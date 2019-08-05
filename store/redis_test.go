@@ -29,7 +29,9 @@ func (s *RedisSuite) SetupTest() {
 		DB:       0,  // use default DB
 	})
 	msgID := func(t store.Trace) string { return t.Message.ID }
-	s.store = store.NewRedis(s.mr.Addr(), "test_namespace", msgID)
+	var err error
+	s.store, err = store.NewRedis(s.mr.Addr(), "test_namespace", msgID)
+	require.NoError(s.T(), err)
 	topic := "kafkqa_redis_store"
 	tp := kafka.TopicPartition{Topic: &topic, Partition: 1}
 	s.messages = []store.Trace{
@@ -105,4 +107,11 @@ func (s *RedisSuite) TestFetchFromRedisShouldBeSourceForResult() {
 
 func TestRedisStore(t *testing.T) {
 	suite.Run(t, new(RedisSuite))
+}
+
+func TestNewShouldFailOnInvalidAddress(t *testing.T) {
+	store, err := store.NewRedis("invalid_redis", "test_namespace", nil)
+
+	require.EqualError(t, err, "dial tcp: address invalid_redis: missing port in address")
+	require.Nil(t, store)
 }

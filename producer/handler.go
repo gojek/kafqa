@@ -35,7 +35,7 @@ func (h *Handler) Handle() {
 				}
 			}
 		default:
-			logger.Debugf("Unknown event type")
+			logger.Debugf("Unknown event type: %v", e)
 		}
 	}
 }
