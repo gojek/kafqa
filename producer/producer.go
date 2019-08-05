@@ -105,16 +105,28 @@ func (p Producer) produceMessage(msg []byte) {
 	}
 }
 
-func New(prodCfg config.Producer, mc msgCreator) (*Producer, error) {
+func Register(cb callback.Callback) Option {
+	return func(p *Producer) {
+		p.callbacks = append(p.callbacks, cb)
+	}
+}
+
+type Option func(*Producer)
+
+func New(prodCfg config.Producer, mc msgCreator, opts ...Option) (*Producer, error) {
 	p, err := kafka.NewProducer(prodCfg.KafkaConfig())
 	if err != nil {
 		return nil, err
 	}
-	return &Producer{
+	producer := &Producer{
 		config:        prodCfg,
 		kafkaProducer: p,
 		messages:      make(chan []byte, 1000),
 		wg:            &sync.WaitGroup{},
 		msgCreator:    mc,
-	}, nil
+	}
+	for _, opt := range opts {
+		opt(producer)
+	}
+	return producer, nil
 }

@@ -25,8 +25,9 @@ type application struct {
 	*consumer.Consumer
 	*producer.Handler
 	*sync.WaitGroup
-	ctx    context.Context
-	cancel context.CancelFunc
+	ctx        context.Context
+	cancel     context.CancelFunc
+	consumerWg *sync.WaitGroup
 }
 
 func main() {
@@ -41,11 +42,14 @@ func main() {
 
 	logger.Infof("running application against %s", appCfg.Producer.KafkaBrokers)
 
-	app.Producer.Run(app.ctx)
-	app.Consumer.Run(app.ctx)
-	app.WaitGroup.Add(1)
-
-	go app.Handler.Handle()
+	if app.Producer != nil {
+		app.Producer.Run(app.ctx)
+		app.WaitGroup.Add(1)
+		go app.Handler.Handle()
+	}
+	if app.Consumer != nil {
+		app.Consumer.Run(app.ctx)
+	}
 
 	defer reporter.GenerateReport()
 	app.Wait()
@@ -55,8 +59,50 @@ func main() {
 func (app *application) Close() {
 	logger.Infof("closing application...")
 	app.cancel()
-	app.Producer.Close()
-	app.Consumer.Close()
+	if app.Producer != nil {
+		app.Producer.Close()
+	}
+	if app.Consumer != nil {
+		app.Consumer.Close()
+	}
+}
+
+func (app *application) Wait() {
+	app.WaitGroup.Wait()
+	app.consumerWg.Wait()
+}
+
+func getProducer(cfg config.Producer) (*producer.Producer, error) {
+	if !cfg.Enabled {
+		logger.Debugf("Producer is not enabled")
+		return nil, nil
+	}
+	var err error
+	kafkaProducer, err := producer.New(cfg, creator.New(),
+		producer.Register(callback.MessageSent),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error creating producer: %v", err)
+	}
+	return kafkaProducer, nil
+}
+
+func getConsumer(appCfg config.Application, ms store.MsgStore, wg *sync.WaitGroup) (*consumer.Consumer, error) {
+	if !appCfg.Consumer.Enabled {
+		logger.Debugf("Consumer is not enabled")
+		return nil, nil
+	}
+	kafkaConsumer, err := consumer.New(appCfg.Consumer,
+		consumer.Register(callback.Acker(ms)),
+		consumer.Register(callback.LatencyTracker),
+		consumer.WaitGroup(wg))
+	if err != nil {
+		return nil, fmt.Errorf("error creating consumer: %v", err)
+	}
+	if appCfg.DevEnvironment() {
+		kafkaConsumer.Register(callback.Display)
+	}
+	return kafkaConsumer, nil
 }
 
 func setup(appCfg config.Application) (*application, error) {
@@ -64,16 +110,9 @@ func setup(appCfg config.Application) (*application, error) {
 
 	var wg sync.WaitGroup
 
-	var err error
-	kafkaProducer, err := producer.New(appCfg.Producer, creator.New())
+	kafkaProducer, err := getProducer(appCfg.Producer)
 	if err != nil {
-		return nil, fmt.Errorf("error creating producer: %v", err)
-	}
-	kafkaProducer.Register(callback.MessageSent)
-
-	kafkaConsumer, err := consumer.New(appCfg.Consumer)
-	if err != nil {
-		return nil, fmt.Errorf("error creating consumer: %v", err)
+		return nil, err
 	}
 
 	traceID := func(t store.Trace) string { return t.Message.ID }
@@ -81,11 +120,10 @@ func setup(appCfg config.Application) (*application, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	kafkaConsumer.Register(callback.Acker(ms))
-	kafkaConsumer.Register(callback.LatencyTracker)
-	if appCfg.DevEnvironment() {
-		kafkaConsumer.Register(callback.Display)
+	var consWg sync.WaitGroup
+	kafkaConsumer, err := getConsumer(appCfg, ms, &consWg)
+	if err != nil {
+		return nil, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), appCfg.RunDuration())
@@ -93,13 +131,16 @@ func setup(appCfg config.Application) (*application, error) {
 	reporter.Setup(ms, 10, appCfg.Reporter)
 
 	app := &application{
-		msgStore:  ms,
-		Producer:  kafkaProducer,
-		Consumer:  kafkaConsumer,
-		Handler:   producer.NewHandler(kafkaProducer.Events(), &wg, ms),
-		WaitGroup: &wg,
-		ctx:       ctx,
-		cancel:    cancel,
+		msgStore:   ms,
+		Producer:   kafkaProducer,
+		Consumer:   kafkaConsumer,
+		consumerWg: &consWg,
+		WaitGroup:  &wg,
+		ctx:        ctx,
+		cancel:     cancel,
+	}
+	if kafkaProducer != nil {
+		app.Handler = producer.NewHandler(kafkaProducer.Events(), &wg, ms)
 	}
 	go app.registerSignalHandler()
 	return app, nil

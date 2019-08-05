@@ -16,15 +16,15 @@ import (
 type Consumer struct {
 	config    config.Consumer
 	consumers []*kafka.Consumer
-	sync.WaitGroup
+	wg        *sync.WaitGroup
 	messages  chan *kafka.Message
 	callbacks []callback.Callback
 }
 
 func (c *Consumer) Run(ctx context.Context) {
-	c.Add(c.config.Concurrency * 2)
 	logger.Debugf("running consumer on brokers: %s, subscribed to: %s", c.config.KafkaBrokers, c.config.Topic)
 	for i, cons := range c.consumers {
+		c.wg.Add(2)
 		go c.consumerWorker(ctx, cons, i)
 		go c.processor(ctx)
 	}
@@ -35,7 +35,7 @@ func (c *Consumer) Register(cb callback.Callback) {
 }
 
 func (c *Consumer) processor(ctx context.Context) {
-	defer c.Done()
+	defer c.wg.Done()
 	for {
 		select {
 		case msg := <-c.messages:
@@ -50,16 +50,14 @@ func (c *Consumer) processor(ctx context.Context) {
 }
 
 func (c *Consumer) consumerWorker(ctx context.Context, cons *kafka.Consumer, id int) {
-	defer c.Done()
+	defer c.wg.Done()
 
 	for {
 		logger.Debugf("[consumer-%d] polling kafka for messages... with timeout %v", id, c.config.PollTimeout())
 		msg, err := cons.ReadMessage(c.config.PollTimeout())
 		if err != nil {
 			kerr, ok := err.(kafka.Error)
-			if ok && kerr.Code() == kafka.ErrTimedOut {
-				//logger.Errorf("[kafka error] error consuming messages: %+v timeout: %v", kerr, c.config.PollTimeout())
-			} else {
+			if !(ok && kerr.Code() == kafka.ErrTimedOut) {
 				logger.Errorf("error consuming messages: %+v timeout: %v", err, c.config.PollTimeout())
 			}
 		} else {
@@ -81,13 +79,26 @@ func (c *Consumer) consumerWorker(ctx context.Context, cons *kafka.Consumer, id 
 
 func (c *Consumer) Close() {
 	logger.Infof("closing consumer...")
-	c.Wait()
+	c.wg.Wait()
 	for _, cons := range c.consumers {
 		cons.Close()
 	}
 }
 
-func New(cfg config.Consumer) (*Consumer, error) {
+type Option func(*Consumer)
+
+func WaitGroup(wg *sync.WaitGroup) Option {
+	return func(c *Consumer) {
+		c.wg = wg
+	}
+}
+func Register(cb callback.Callback) Option {
+	return func(c *Consumer) {
+		c.callbacks = append(c.callbacks, cb)
+	}
+}
+
+func New(cfg config.Consumer, opts ...Option) (*Consumer, error) {
 	var consumers []*kafka.Consumer
 	for i := 0; i < cfg.Concurrency; i++ {
 		cons, err := kafka.NewConsumer(cfg.KafkaConfig())
@@ -100,10 +111,13 @@ func New(cfg config.Consumer) (*Consumer, error) {
 		}
 		consumers = append(consumers, cons)
 	}
-
-	return &Consumer{
+	cons := &Consumer{
 		consumers: consumers,
 		config:    cfg,
 		messages:  make(chan *kafka.Message, 100),
-	}, nil
+	}
+	for _, opt := range opts {
+		opt(cons)
+	}
+	return cons, nil
 }
