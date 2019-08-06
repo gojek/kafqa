@@ -47,15 +47,42 @@ message {
 }
 ```
 
+### Running separate consumer and producers
+* `CONSUMER_ENABLED, PRODUCER_ENABLED` can be set to only run specific component
+
+```
+# run only consumer
+CONSUMER_ENABLED="true"
+PRODUCER_ENABLED="false"
+```
+* Requires `redis` store to track and ack messages
+```
+STORE_TYPE="redis"
+STORE_REDIS_HOST="127.0.0.1:6379"
+STORE_RUN_ID="run-$CONSUMER_GROUP_ID"
+```
+
+### SSL Setup
+Producer and consumer supports SSL, set the following env configuration
+
+```
+CONSUMER_SECURITY_PROTOCOL="ssl"
+CONSUMER_CA_LOCATION="/certs/ca/rootCA.crt" # Public root ca certificate
+CONSUMER_CERTIFICATE_LOCATION="/certs/client/client.crt" # certificate signed by ICA / root CA
+CONSUMER_KEY_LOCATION="/certs/client/client.key" # private key
+```
+
+### Disable consumer Auto commit
+if consumer is restarted, some messages could be not tracked, as it's committed before processing.
+To disable and commit after processing the messages (This increases the run time though) set `CONSUMER_ENABLE_AUTO_COMMIT="false"
+
 Configuration of application is customisable with `kafkq.env` eg: tweak the concurrency of producers/consumers.
 
 ### Todo
-* [ ] Prometheus exporter for metrics
-* [ ] CI (vet/lint/golangci) (travis)
 * [ ] Generate Random consumer group and topic id (for development)
-* [ ] Capture throughput metrics
+* [ ] Add more metrics on messages which're lost (ID/Sequence/Duplicates)
+* [ ] Producer to handle high throughput (queue full issue)
 * [ ] measure % of data loss, average of latency
-* [ ] Add more metrics on messages which're lost (ID/Sequence)
 
 
 ### Done:
@@ -68,3 +95,6 @@ Configuration of application is customisable with `kafkq.env` eg: tweak the conc
 * [X] Add store to keep track of messages (producer) [interface]
 * [X] Ack in store to for received messages (consumer)
 * [X] Generate produce & consume basic report
+* [X] Prometheus exporter for metrics
+* [X] CI (vet/lint/golangci) (travis)
+* [X] Capture throughput metrics

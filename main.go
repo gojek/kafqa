@@ -76,7 +76,7 @@ func (app *application) Wait() {
 
 func getProducer(cfg config.Producer) (*producer.Producer, error) {
 	if !cfg.Enabled {
-		logger.Debugf("Producer is not enabled")
+		logger.Infof("Producer is not enabled")
 		return nil, nil
 	}
 	var err error
@@ -92,7 +92,7 @@ func getProducer(cfg config.Producer) (*producer.Producer, error) {
 
 func getConsumer(appCfg config.Application, ms store.MsgStore, wg *sync.WaitGroup) (*consumer.Consumer, error) {
 	if !appCfg.Consumer.Enabled {
-		logger.Debugf("Consumer is not enabled")
+		logger.Infof("Consumer is not enabled")
 		return nil, nil
 	}
 	kafkaConsumer, err := consumer.New(appCfg.Consumer,

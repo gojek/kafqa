@@ -26,7 +26,7 @@ func (c *Consumer) Run(ctx context.Context) {
 	for i, cons := range c.consumers {
 		c.wg.Add(2)
 		msgs := c.consumerWorker(ctx, cons, i) // goroutine producer
-		go c.processor(ctx, msgs, i)
+		go c.processor(msgs, i)
 	}
 }
 
@@ -34,7 +34,7 @@ func (c *Consumer) Register(cb callback.Callback) {
 	c.callbacks = append(c.callbacks, cb)
 }
 
-func (c *Consumer) processor(ctx context.Context, messages <-chan *kafka.Message, id int) {
+func (c *Consumer) processor(messages <-chan *kafka.Message, id int) {
 	defer c.wg.Done()
 	logger.Debugf("[processor-%d] processing messages...", id)
 	for msg := range messages {
@@ -53,26 +53,10 @@ func (c *Consumer) consumerWorker(ctx context.Context, cons *kafka.Consumer, id 
 		defer func() { close(messages) }()
 
 		for {
-			logger.Debugf("[consumer-%d] polling kafka for messages... with timeout %v", id, c.config.PollTimeout())
-			msg, err := cons.ReadMessage(c.config.PollTimeout())
-			if err != nil {
-				kerr, ok := err.(kafka.Error)
-				if !(ok && kerr.Code() == kafka.ErrTimedOut) {
-					logger.Errorf("error consuming messages: %+v timeout: %v", err, c.config.PollTimeout())
-				}
-			} else {
-				messages <- msg
-				if !c.config.EnableAutoCommit && msg != nil {
-					cons.CommitMessage(msg)
-				}
-			}
-			if err := ctx.Err(); err != nil {
-				logger.Debugf("[consumer-%d] context done, closing consumer worker %v", id, err)
-				return
-			}
+			c.readMessage(cons, messages, id)
 			select {
 			case <-ctx.Done():
-				logger.Debugf("[consumer-%d] context done, closing....", id, err)
+				logger.Debugf("[consumer-%d] context done, closing %v....", id, ctx.Err())
 				return
 			case <-c.exit:
 				return
@@ -84,6 +68,27 @@ func (c *Consumer) consumerWorker(ctx context.Context, cons *kafka.Consumer, id 
 	}(messages)
 
 	return messages
+}
+
+func (c *Consumer) readMessage(cons *kafka.Consumer, messages chan<- *kafka.Message, id int) {
+	timeout := c.config.PollTimeout()
+	logger.Debugf("[consumer-%d] polling kafka for messages... with timeout %v", id, timeout)
+	msg, err := cons.ReadMessage(timeout)
+	if err != nil {
+		kerr, ok := err.(kafka.Error)
+		if !(ok && kerr.Code() == kafka.ErrTimedOut) {
+			logger.Errorf("error consuming messages: %+v timeout: %v", err, timeout)
+		}
+	} else {
+		messages <- msg
+		if !c.config.EnableAutoCommit && msg != nil {
+			tps, err := cons.CommitMessage(msg)
+			if err != nil {
+				logger.Errorf("Error committing message: %v, TopicParitions: %v err: %v", msg, tps, err)
+			}
+		}
+	}
+
 }
 
 func (c *Consumer) Close() {
