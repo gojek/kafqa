@@ -1,4 +1,5 @@
 # KAFQA
+[![Build Status](https://travis-ci.org/gojekfarm/kafqa.svg?branch=master)](https://travis-ci.org/gojekfarm/kafqa)
 
 Kafka quality analyser, measuring data loss, ops, latency
 
