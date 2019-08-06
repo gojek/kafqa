@@ -3,6 +3,7 @@ package config
 const KafkaBootstrapServerKey string = "bootstrap.servers"
 const ConsumerGroupIDKey string = "group.id"
 const ConsumerOffsetResetKey string = "auto.offset.reset"
+const EnableAutoCommit string = "enable.auto.commit"
 
 const SecurityProtocol string = "security.protocol"
 const SSLCertificateLocation string = "ssl.certificate.location"

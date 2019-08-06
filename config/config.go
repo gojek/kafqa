@@ -38,9 +38,10 @@ type Consumer struct {
 	Concurrency      int    `default:"20"`
 	KafkaBrokers     string `split_words:"true" required:"true"`
 	GroupID          string `split_words:"true" default:"kafqa_test_consumer"`
-	OffsetReset      string `split_words:"true" default:"earliest"`
+	OffsetReset      string `split_words:"true" default:"latest"`
 	PollTimeoutMs    int64  `split_words:"true" default:"500"`
 	SecurityProtocol string `split_words:"true" default:"PLAINTEXT"`
+	EnableAutoCommit bool   `split_words:"true" default:"true"`
 	ssl              SSL
 }
 
@@ -110,6 +111,7 @@ func (c Consumer) KafkaConfig() *kafka.ConfigMap {
 		SSLKeyLocation:          c.ssl.KeyLocation,
 		SSLKeyPassword:          c.ssl.KeyPassword,
 		SSLCertLocation:         c.ssl.CertificateLocation,
+		EnableAutoCommit:        c.EnableAutoCommit,
 	}
 }
 

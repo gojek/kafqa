@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/gojekfarm/kafqa/callback"
 	"github.com/gojekfarm/kafqa/config"
@@ -17,6 +18,7 @@ import (
 	"github.com/gojekfarm/kafqa/producer"
 	"github.com/gojekfarm/kafqa/reporter"
 	"github.com/gojekfarm/kafqa/store"
+	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 
 type application struct {
@@ -80,6 +82,7 @@ func getProducer(cfg config.Producer) (*producer.Producer, error) {
 	var err error
 	kafkaProducer, err := producer.New(cfg, creator.New(),
 		producer.Register(callback.MessageSent),
+		producer.Register(func(msg *kafka.Message) { time.Sleep(200) }),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error creating producer: %v", err)
