@@ -2,7 +2,6 @@ package producer
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"testing"
 
@@ -10,41 +9,83 @@ import (
 	"github.com/gojekfarm/kafqa/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 
-func TestShouldCallRegisteredCallbacks(t *testing.T) {
+type ProducerSuite struct {
+	suite.Suite
+	kafkaProducer *kafkaProducerMock
+	creator       *msgCreatorMock
+	kp            Producer
+}
+
+func (s *ProducerSuite) SetupTest() {
 	logger.Setup("")
-	creator := new(msgCreatorMock)
-	kafkaProducer := new(kafkaProducerMock)
-	kp := Producer{
-		kafkaProducer: kafkaProducer,
-		config:        config.Producer{Topic: "some_topic", TotalMessages: 1, Concurrency: 1},
-		messages:      make(chan []byte, 1000),
+	s.kafkaProducer = new(kafkaProducerMock)
+	s.creator = new(msgCreatorMock)
+	s.kp = Producer{
+		kafkaProducer: s.kafkaProducer,
+		msgCreator:    s.creator,
 		wg:            &sync.WaitGroup{},
-		msgCreator:    creator,
+		messages:      make(chan []byte, 1000),
 	}
+}
+
+func (s *ProducerSuite) TestShouldCallRegisteredCallbacks() {
+	t := s.T()
 	var callbackCalled bool
 	ch := make(chan struct{}, 1)
-	call := func(msg *kafka.Message) {
-		fmt.Println("interesting....")
+	callback := func(msg *kafka.Message) {
 		callbackCalled = true
 		ch <- struct{}{}
 	}
-	kp.Register(call)
-	creator.On("NewBytes").Return([]byte("data1"), nil).Times(1)
+	s.kp.messages = make(chan []byte, 1)
+	s.kp.config = config.Producer{TotalMessages: 1, Concurrency: 1, Topic: "sometopic"}
+	opt := Register(callback)
+	opt(&s.kp)
+	s.creator.On("NewBytes").Return([]byte("data1"), nil).Times(1)
 	var events chan kafka.Event
-	kafkaProducer.On("Produce", mock.AnythingOfType("*kafka.Message"), events).Return(nil).Times(1)
-	kafkaProducer.On("Flush", 0).Return(0)
-	kafkaProducer.On("Close").Return()
+	s.kafkaProducer.On("Produce", mock.AnythingOfType("*kafka.Message"), events).Return(nil).Times(1)
+	s.kafkaProducer.On("Flush", 0).Return(0)
+	s.kafkaProducer.On("Close").Return()
 
-	kp.Run(context.Background())
+	s.kp.Run(context.Background())
 	<-ch
-	kp.Close()
+	s.kp.Close()
 
-	creator.AssertExpectations(t)
-	kafkaProducer.AssertExpectations(t)
+	s.creator.AssertExpectations(t)
+	s.kafkaProducer.AssertExpectations(t)
 	assert.True(t, callbackCalled, "callback should be called")
+}
+
+func (s *ProducerSuite) TestIfAllMessagesAreProduced() {
+	t := s.T()
+	msg := make(chan struct{}, 1000)
+	var events chan kafka.Event
+	callback := func(message *kafka.Message) {
+		msg <- struct{}{}
+	}
+	s.kp.config = config.Producer{TotalMessages: 1000, Concurrency: 10, Topic: "sometopic"}
+	opt := Register(callback)
+	opt(&s.kp)
+	s.kafkaProducer.On("Produce", mock.AnythingOfTypeArgument("*kafka.Message"), events).Return(nil)
+	s.kafkaProducer.On("Close").Return()
+	s.kafkaProducer.On("Flush", 0).Return(0)
+	s.creator.On("NewBytes").Return([]byte("somedata"), nil)
+
+	s.kp.Run(context.Background())
+	for i := 0; i < 1000; i++ {
+		<-msg
+	}
+	s.kp.Close()
+	s.kafkaProducer.AssertNumberOfCalls(t, "Produce", 1000)
+	s.kafkaProducer.AssertExpectations(t)
+	s.creator.AssertExpectations(t)
+}
+
+func TestProducer(t *testing.T) {
+	suite.Run(t, new(ProducerSuite))
 }
 
 type msgCreatorMock struct{ mock.Mock }
