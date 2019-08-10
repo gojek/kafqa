@@ -26,6 +26,8 @@ jobs:
     - stage: test
       name: "Unit tests"
       script: make test
+    - script: make testcodecov
+      name: "Unit tests code coverage"
     - script: make check-quality
       name: "Check code quality"
     - script: make golangci
@@ -33,3 +35,5 @@ jobs:
     - stage: build
       script: make clean build
 
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
