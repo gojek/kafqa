@@ -1,6 +1,6 @@
 # KAFQA
 [![Build Status](https://travis-ci.org/gojekfarm/kafqa.svg?branch=master)](https://travis-ci.org/gojekfarm/kafqa)
-
+[![codecov](https://codecov.io/gh/gojekfarm/kafqa/branch/master/graph/badge.svg)](https://codecov.io/gh/gojekfarm/kafqa)
 Kafka quality analyser, measuring data loss, ops, latency
 
 ### Running
