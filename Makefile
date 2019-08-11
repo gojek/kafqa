@@ -28,6 +28,9 @@ testv:
 test:
 	go test -race ./...
 
+testcodecov:
+	go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+
 fmt:
 	gofmt -l -s -w $(SOURCE_DIRS)
 
