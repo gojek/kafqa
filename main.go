@@ -44,13 +44,17 @@ func main() {
 
 	logger.Infof("running application against %s", appCfg.Producer.KafkaBrokers)
 
+	if app.Consumer != nil {
+		app.Consumer.Run(app.ctx)
+	}
+
+	// Introducing delay since consumers can consume quickly
+	time.Sleep(time.Millisecond * time.Duration(appCfg.Producer.DelayMs))
+
 	if app.Producer != nil {
 		app.Producer.Run(app.ctx)
 		app.WaitGroup.Add(1)
 		go app.Handler.Handle()
-	}
-	if app.Consumer != nil {
-		app.Consumer.Run(app.ctx)
 	}
 
 	defer reporter.GenerateReport()

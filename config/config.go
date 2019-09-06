@@ -29,6 +29,8 @@ type Producer struct {
 	FlushTimeoutMs   int    `split_words:"true" default:"2000"`
 	SecurityProtocol string `split_words:"true" default:"PLAINTEXT"`
 	ssl              SSL
+	DelayMs          int `split_words:"true" default:"1000"`
+	WorkerDelayMs    int `split_words:"true" default:"50"`
 }
 
 type Consumer struct {

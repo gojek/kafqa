@@ -80,6 +80,7 @@ To disable and commit after processing the messages (This increases the run time
 Configuration of application is customisable with `kafkq.env` eg: tweak the concurrency of producers/consumers.
 
 ### Todo
+* [ ] Compute now - kafka timestamp and report it
 * [ ] Generate Random consumer group and topic id (for development)
 * [ ] Add more metrics on messages which're lost (ID/Sequence/Duplicates)
 * [ ] Producer to handle high throughput (queue full issue)

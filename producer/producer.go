@@ -3,6 +3,7 @@ package producer
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/gojekfarm/kafqa/callback"
 	"github.com/gojekfarm/kafqa/config"
@@ -80,6 +81,7 @@ func (p Producer) ProduceWorker(ctx context.Context) {
 	for {
 		select {
 		case msg, ok := <-p.messages:
+			time.Sleep(time.Millisecond * time.Duration(p.config.WorkerDelayMs))
 			if !ok {
 				return
 			}
