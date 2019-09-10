@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"github.com/spf13/viper"
 	"net/http"
 	"time"
 
@@ -12,24 +13,28 @@ import (
 )
 
 var (
+	tags       = []string{"Topic", "pod_name", "deployment"}
+	podName    = viper.GetString("pod_name")
+	deployment = viper.GetString("deployment")
+
 	messagesSent = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "messages",
 		Name:      "sent",
-	}, []string{"Topic"})
+	}, tags)
 	messagesReceived = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "messages",
 		Name:      "received",
-	}, []string{"Topic"})
+	}, tags)
 	produceLatency = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 		Namespace:  "latency_ms",
 		Name:       "produce",
 		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
-	}, []string{"Topic"})
+	}, tags)
 	consumeLatency = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 		Namespace:  "latency_ms",
 		Name:       "receive",
 		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
-	}, []string{"Topic"})
+	}, tags)
 )
 
 type promClient struct {
@@ -41,27 +46,27 @@ var prom promClient
 
 func AcknowledgedMessage(msg creator.Message, topic string) {
 	if prom.enabled {
-		messagesReceived.WithLabelValues(topic).Inc()
+		messagesReceived.WithLabelValues(topic, podName, deployment).Inc()
 	}
 }
 
 func SentMessage(msg creator.Message, topic string) {
 	if prom.enabled {
-		messagesSent.WithLabelValues(topic).Inc()
+		messagesSent.WithLabelValues(topic, podName, deployment).Inc()
 	}
 }
 
 func ConsumerLatency(dur time.Duration, topic string) {
 	if prom.enabled {
 		ms := dur / time.Millisecond
-		consumeLatency.WithLabelValues(topic).Observe(float64(ms))
+		consumeLatency.WithLabelValues(topic, podName, deployment).Observe(float64(ms))
 	}
 }
 
 func ProduceLatency(dur time.Duration, topic string) {
 	if prom.enabled {
 		ms := dur / time.Millisecond
-		produceLatency.WithLabelValues(topic).Observe(float64(ms))
+		produceLatency.WithLabelValues(topic, podName, deployment).Observe(float64(ms))
 	}
 }
 
