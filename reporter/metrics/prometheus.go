@@ -12,24 +12,24 @@ import (
 )
 
 var (
-	messagesSent = prometheus.NewCounter(prometheus.CounterOpts{
+	messagesSent = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "messages",
 		Name:      "sent",
-	})
-	messagesReceived = prometheus.NewCounter(prometheus.CounterOpts{
+	}, []string{"Topic"})
+	messagesReceived = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "messages",
 		Name:      "received",
-	})
-	produceLatency = prometheus.NewSummary(prometheus.SummaryOpts{
+	}, []string{"Topic"})
+	produceLatency = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 		Namespace:  "latency_ms",
 		Name:       "produce",
 		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
-	})
-	consumeLatency = prometheus.NewSummary(prometheus.SummaryOpts{
+	}, []string{"Topic"})
+	consumeLatency = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 		Namespace:  "latency_ms",
 		Name:       "receive",
 		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
-	})
+	}, []string{"Topic"})
 )
 
 type promClient struct {
@@ -39,29 +39,29 @@ type promClient struct {
 
 var prom promClient
 
-func AcknowledgedMessage(msg creator.Message) {
+func AcknowledgedMessage(msg creator.Message, topic string) {
 	if prom.enabled {
-		messagesReceived.Inc()
+		messagesReceived.WithLabelValues(topic).Inc()
 	}
 }
 
-func SentMessage(msg creator.Message) {
+func SentMessage(msg creator.Message, topic string) {
 	if prom.enabled {
-		messagesSent.Inc()
+		messagesSent.WithLabelValues(topic).Inc()
 	}
 }
 
-func ConsumerLatency(dur time.Duration) {
+func ConsumerLatency(dur time.Duration, topic string) {
 	if prom.enabled {
 		ms := dur / time.Millisecond
-		consumeLatency.Observe(float64(ms))
+		consumeLatency.WithLabelValues(topic).Observe(float64(ms))
 	}
 }
 
-func ProduceLatency(dur time.Duration) {
+func ProduceLatency(dur time.Duration, topic string) {
 	if prom.enabled {
 		ms := dur / time.Millisecond
-		produceLatency.Observe(float64(ms))
+		produceLatency.WithLabelValues(topic).Observe(float64(ms))
 	}
 }
 
