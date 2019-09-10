@@ -172,3 +172,4 @@ func (app *application) registerSignalHandler() {
 		}
 	}
 }
+

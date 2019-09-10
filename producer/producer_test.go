@@ -111,3 +111,8 @@ func (m *kafkaProducerMock) Events() chan kafka.Event {
 }
 
 func (m *kafkaProducerMock) Close() { m.Called() }
+
+func (m *kafkaProducerMock) ProduceChannel() chan *kafka.Message {
+	args := m.Called()
+	return args.Get(0).(chan *kafka.Message)
+}

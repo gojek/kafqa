@@ -35,6 +35,18 @@ var (
 		Name:       "receive",
 		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
 	}, tags)
+	producerCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "producers",
+		Name: "running",
+	}, tags)
+	consumerCount = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "consumers",
+		Name: "running",
+	}, tags)
+	producerChannelCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "producer_channel",
+		Name: "messages_queued",
+	}, tags)
 )
 
 type promClient struct {
@@ -43,6 +55,7 @@ type promClient struct {
 }
 
 var prom promClient
+
 
 func AcknowledgedMessage(msg creator.Message, topic string) {
 	if prom.enabled {
@@ -70,6 +83,24 @@ func ProduceLatency(dur time.Duration, topic string) {
 	}
 }
 
+func ProducerCount(topic string) {
+	if prom.enabled {
+		producerCount.WithLabelValues(topic, podName, deployment).Inc()
+	}
+}
+
+func ConsumerCount(topic string) {
+	if prom.enabled {
+		consumerCount.WithLabelValues(topic, podName, deployment).Inc()
+	}
+}
+
+func ProducerChannel(count int, topic string) {
+	if prom.enabled {
+		producerChannelCount.WithLabelValues(topic, podName, deployment).Add(float64(count))
+	}
+}
+
 func Setup(cfg config.Prometheus) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -84,6 +115,9 @@ func Setup(cfg config.Prometheus) {
 		prometheus.MustRegister(messagesReceived)
 		prometheus.MustRegister(consumeLatency)
 		prometheus.MustRegister(produceLatency)
+		prometheus.MustRegister(producerCount)
+		prometheus.MustRegister(consumerCount)
+		prometheus.MustRegister(producerChannelCount)
 
 		mux := http.NewServeMux()
 		mux.Handle("/metrics", promhttp.Handler())
