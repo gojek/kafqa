@@ -2,9 +2,10 @@ package producer
 
 import (
 	"context"
-	"github.com/gojekfarm/kafqa/reporter/metrics"
 	"sync"
 	"time"
+
+	"github.com/gojekfarm/kafqa/reporter/metrics"
 
 	"github.com/gojekfarm/kafqa/callback"
 	"github.com/gojekfarm/kafqa/config"
@@ -143,7 +144,7 @@ func (p Producer) Poll(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			chanLength := len(p.kafkaProducer.ProduceChannel())
-			metrics.ProducerChannel(chanLength, p.config.Topic)
+			metrics.ProducerChannelLength(chanLength, p.config.Topic)
 			logger.Debugf("Producer channel length: %v", chanLength)
 		case <-ctx.Done():
 			ticker.Stop()

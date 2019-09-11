@@ -5,8 +5,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/gojekfarm/kafqa/config"
 	"github.com/gojekfarm/kafqa/logger"
+
+	"github.com/gojekfarm/kafqa/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -22,6 +23,7 @@ type ProducerSuite struct {
 
 func (s *ProducerSuite) SetupTest() {
 	logger.Setup("")
+
 	s.kafkaProducer = new(kafkaProducerMock)
 	s.creator = new(msgCreatorMock)
 	s.kp = Producer{
@@ -40,6 +42,7 @@ func (s *ProducerSuite) TestShouldCallRegisteredCallbacks() {
 		callbackCalled = true
 		ch <- struct{}{}
 	}
+	prodCh := make(chan *kafka.Message)
 	s.kp.messages = make(chan []byte, 1)
 	s.kp.config = config.Producer{TotalMessages: 1, Concurrency: 1, Topic: "sometopic"}
 	opt := Register(callback)
@@ -49,7 +52,7 @@ func (s *ProducerSuite) TestShouldCallRegisteredCallbacks() {
 	s.kafkaProducer.On("Produce", mock.AnythingOfType("*kafka.Message"), events).Return(nil).Times(1)
 	s.kafkaProducer.On("Flush", 0).Return(0)
 	s.kafkaProducer.On("Close").Return()
-
+	s.kafkaProducer.On("ProduceChannel").Return(prodCh).Maybe()
 	s.kp.Run(context.Background())
 	<-ch
 	s.kp.Close()
@@ -66,12 +69,15 @@ func (s *ProducerSuite) TestIfAllMessagesAreProduced() {
 	callback := func(message *kafka.Message) {
 		msg <- struct{}{}
 	}
+	prodCh := make(chan *kafka.Message)
 	s.kp.config = config.Producer{TotalMessages: 1000, Concurrency: 10, Topic: "sometopic"}
 	opt := Register(callback)
 	opt(&s.kp)
 	s.kafkaProducer.On("Produce", mock.AnythingOfTypeArgument("*kafka.Message"), events).Return(nil)
 	s.kafkaProducer.On("Close").Return()
 	s.kafkaProducer.On("Flush", 0).Return(0)
+	s.kafkaProducer.On("ProduceChannel").Return(prodCh).Maybe()
+
 	s.creator.On("NewBytes").Return([]byte("somedata"), nil)
 
 	s.kp.Run(context.Background())

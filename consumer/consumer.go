@@ -3,9 +3,10 @@ package consumer
 import (
 	"context"
 	"fmt"
-	"github.com/gojekfarm/kafqa/reporter/metrics"
 	"sync"
 	"time"
+
+	"github.com/gojekfarm/kafqa/reporter/metrics"
 
 	"github.com/gojekfarm/kafqa/callback"
 	"github.com/gojekfarm/kafqa/config"

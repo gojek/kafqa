@@ -5,9 +5,10 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/gojekfarm/kafqa/logger"
+
 	"github.com/gojekfarm/kafqa/config"
 	"github.com/gojekfarm/kafqa/creator"
-	"github.com/gojekfarm/kafqa/logger"
 	"github.com/gojekfarm/kafqa/store"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -56,12 +57,14 @@ func (s *HandlerSuite) TestIfAllMsgsAreTracedIfEventIsKafkaMsg() {
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 		Value:          msg,
 	}
+	prodCh := make(chan *kafka.Message)
 	var events chan kafka.Event
 	s.kafkaProducer.On("Produce", mock.AnythingOfType("*kafka.Message"), events).Return(nil).Run(func(args mock.Arguments) {
 		eventsCh <- &kafkaMessage
 	})
 	s.kafkaProducer.On("Close").Return()
 	s.kafkaProducer.On("Flush", 0).Return(0)
+	s.kafkaProducer.On("ProduceChannel").Return(prodCh).Maybe()
 	s.msgCreator.On("NewBytes").Return([]byte("somedata"), nil)
 	s.msgStore.On("Track", mock.AnythingOfType("store.Trace")).Return(nil)
 
@@ -93,12 +96,15 @@ func (s *HandlerSuite) TestIfNoMsgsAreTracedIfEventTypeIsUnknown() {
 		events:   eventsCh,
 		msgStore: s.msgStore,
 	}
+	prodCh := make(chan *kafka.Message)
 	var events chan kafka.Event
 	s.kafkaProducer.On("Produce", mock.AnythingOfType("*kafka.Message"), events).Return(nil).Run(func(args mock.Arguments) {
 		eventsCh <- new(kafka.Error)
 	})
 	s.kafkaProducer.On("Close").Return()
 	s.kafkaProducer.On("Flush", 0).Return(0)
+	s.kafkaProducer.On("ProduceChannel").Return(prodCh).Maybe()
+
 	s.msgCreator.On("NewBytes").Return([]byte("somedata"), nil)
 	wg.Add(1)
 	s.kp.Run(context.Background())

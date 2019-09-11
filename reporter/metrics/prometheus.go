@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"github.com/spf13/viper"
 	"net/http"
 	"time"
 
@@ -13,9 +12,7 @@ import (
 )
 
 var (
-	tags       = []string{"Topic", "pod_name", "deployment"}
-	podName    = viper.GetString("pod_name")
-	deployment = viper.GetString("deployment")
+	tags = []string{"topic", "pod_name", "deployment"}
 
 	messagesSent = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "messages",
@@ -37,67 +34,68 @@ var (
 	}, tags)
 	producerCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "producers",
-		Name: "running",
+		Name:      "running",
 	}, tags)
 	consumerCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "consumers",
-		Name: "running",
+		Name:      "running",
 	}, tags)
 	producerChannelCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "producer_channel",
-		Name: "messages_queued",
+		Name:      "messages_queued",
 	}, tags)
 )
 
 type promClient struct {
-	enabled bool
-	port    int
+	enabled    bool
+	port       int
+	pod        string
+	deployment string
 }
 
 var prom promClient
 
-
 func AcknowledgedMessage(msg creator.Message, topic string) {
 	if prom.enabled {
-		messagesReceived.WithLabelValues(topic, podName, deployment).Inc()
+		messagesReceived.WithLabelValues(topic, prom.pod, prom.deployment).Inc()
 	}
 }
 
 func SentMessage(msg creator.Message, topic string) {
 	if prom.enabled {
-		messagesSent.WithLabelValues(topic, podName, deployment).Inc()
+		messagesSent.WithLabelValues(topic, prom.pod, prom.deployment).Inc()
 	}
 }
 
 func ConsumerLatency(dur time.Duration, topic string) {
 	if prom.enabled {
 		ms := dur / time.Millisecond
-		consumeLatency.WithLabelValues(topic, podName, deployment).Observe(float64(ms))
+		consumeLatency.WithLabelValues(topic, prom.pod, prom.deployment).Observe(float64(ms))
 	}
 }
 
 func ProduceLatency(dur time.Duration, topic string) {
 	if prom.enabled {
 		ms := dur / time.Millisecond
-		produceLatency.WithLabelValues(topic, podName, deployment).Observe(float64(ms))
+		produceLatency.WithLabelValues(topic, prom.pod, prom.deployment).Observe(float64(ms))
 	}
 }
 
 func ProducerCount(topic string) {
 	if prom.enabled {
-		producerCount.WithLabelValues(topic, podName, deployment).Inc()
+		producerCount.WithLabelValues(topic, prom.pod, prom.deployment).Inc()
 	}
 }
 
 func ConsumerCount(topic string) {
 	if prom.enabled {
-		consumerCount.WithLabelValues(topic, podName, deployment).Inc()
+		consumerCount.WithLabelValues(topic, prom.pod, prom.deployment).Inc()
 	}
 }
 
-func ProducerChannel(count int, topic string) {
+func ProducerChannelLength(count int, topic string) {
 	if prom.enabled {
-		producerChannelCount.WithLabelValues(topic, podName, deployment).Add(float64(count))
+		producerChannelCount.WithLabelValues(topic, prom.pod, prom.deployment).Add(float64(count))
 	}
 }
 
@@ -108,7 +106,7 @@ func Setup(cfg config.Prometheus) {
 		}
 	}()
 
-	prom = promClient{enabled: cfg.Enabled, port: cfg.Port}
+	prom = promClient{enabled: cfg.Enabled, port: cfg.Port, pod: cfg.PodName, deployment: cfg.Deployment}
 	if cfg.Enabled {
 
 		prometheus.MustRegister(messagesSent)
