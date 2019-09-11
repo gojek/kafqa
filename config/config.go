@@ -31,6 +31,7 @@ type Producer struct {
 	ssl              SSL
 	DelayMs          int `split_words:"true" default:"1000"`
 	WorkerDelayMs    int `split_words:"true" default:"50"`
+	Acks             int `default:"1"`
 }
 
 type Consumer struct {
@@ -102,6 +103,7 @@ func (p Producer) KafkaConfig() *kafka.ConfigMap {
 		SSLKeyLocation:          p.ssl.KeyLocation,
 		SSLKeyPassword:          p.ssl.KeyPassword,
 		SSLCertLocation:         p.ssl.CertificateLocation,
+		ProducerAcknowledgement: p.Acks,
 	}
 }
 
