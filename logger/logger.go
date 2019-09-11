@@ -29,5 +29,8 @@ func Setup(level string) {
 	default:
 		zlog, _ = zap.NewProduction()
 	}
-	log = zlog.Sugar()
+	// This condition is to avoid race conditions in test cases
+	if log == nil {
+		log = zlog.Sugar()
+	}
 }

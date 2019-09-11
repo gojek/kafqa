@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gojekfarm/kafqa/reporter/metrics"
+
 	"github.com/gojekfarm/kafqa/callback"
 	"github.com/gojekfarm/kafqa/config"
 	"github.com/gojekfarm/kafqa/logger"
@@ -33,6 +35,7 @@ func (c *Consumer) Run(ctx context.Context) {
 	for i, cons := range c.consumers {
 		c.wg.Add(2)
 		msgs := c.consumerWorker(ctx, cons, i) // goroutine producer
+		metrics.ConsumerCount(c.config.Topic)
 		go c.processor(msgs, i)
 	}
 }

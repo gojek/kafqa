@@ -5,6 +5,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gojekfarm/kafqa/creator"
+
+	"github.com/gojekfarm/kafqa/reporter/metrics"
+
 	"github.com/gojekfarm/kafqa/callback"
 	"github.com/gojekfarm/kafqa/config"
 	"github.com/gojekfarm/kafqa/logger"
@@ -12,7 +16,7 @@ import (
 )
 
 type msgCreator interface {
-	NewBytes() ([]byte, error)
+	NewMessage() creator.Message
 }
 
 type kafkaProducer interface {
@@ -20,18 +24,20 @@ type kafkaProducer interface {
 	Flush(int) int
 	Events() chan kafka.Event
 	Close()
+	ProduceChannel() chan *kafka.Message
 }
 
 type Producer struct {
 	kafkaProducer
 	config   config.Producer
-	messages chan []byte
+	messages chan creator.Message
 	msgCreator
 	wg        *sync.WaitGroup
 	callbacks []callback.Callback
 }
 
 func (p Producer) Run(ctx context.Context) {
+	go p.Poll(ctx)
 	go p.runProducers(ctx)
 	var i uint64
 	logger.Debugf("started producing to chan....")
@@ -46,8 +52,8 @@ func (p Producer) Run(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			default:
-				mBytes, _ := p.msgCreator.NewBytes()
-				p.messages <- mBytes
+				msg := p.msgCreator.NewMessage()
+				p.messages <- msg
 			}
 		}
 		logger.Infof("produced %d messages.", p.config.TotalMessages)
@@ -72,6 +78,7 @@ func (p Producer) runProducers(ctx context.Context) {
 	for i := 0; i < p.config.Concurrency; i++ {
 		logger.Debugf("running producer %d on brokers: %s for topic %s", i, p.config.KafkaBrokers, p.config.Topic)
 		go p.ProduceWorker(ctx)
+		metrics.ProducerCount(p.config.Topic)
 		p.wg.Add(1)
 	}
 }
@@ -92,10 +99,12 @@ func (p Producer) ProduceWorker(ctx context.Context) {
 	}
 }
 
-func (p Producer) produceMessage(msg []byte) {
+func (p Producer) produceMessage(msg creator.Message) {
+	msg.CreatedTime = time.Now()
+	mbyte, _ := msg.Bytes()
 	kafkaMsg := kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &p.config.Topic, Partition: kafka.PartitionAny},
-		Value:          msg,
+		Value:          mbyte,
 	}
 	if err := p.kafkaProducer.Produce(&kafkaMsg, nil); err != nil {
 		logger.Errorf("Error producing message to kafka: %v", err)
@@ -123,7 +132,7 @@ func New(prodCfg config.Producer, mc msgCreator, opts ...Option) (*Producer, err
 	producer := &Producer{
 		config:        prodCfg,
 		kafkaProducer: p,
-		messages:      make(chan []byte, 1000),
+		messages:      make(chan creator.Message, 10000),
 		wg:            &sync.WaitGroup{},
 		msgCreator:    mc,
 	}
@@ -131,4 +140,19 @@ func New(prodCfg config.Producer, mc msgCreator, opts ...Option) (*Producer, err
 		opt(producer)
 	}
 	return producer, nil
+}
+
+func (p Producer) Poll(ctx context.Context) {
+	ticker := time.NewTicker((500 * time.Millisecond))
+	for {
+		select {
+		case <-ticker.C:
+			chanLength := len(p.kafkaProducer.ProduceChannel())
+			metrics.ProducerChannelLength(chanLength, p.config.Topic)
+			logger.Debugf("Producer channel length: %v", chanLength)
+		case <-ctx.Done():
+			ticker.Stop()
+			return
+		}
+	}
 }

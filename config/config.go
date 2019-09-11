@@ -55,8 +55,10 @@ type SSL struct {
 }
 
 type Prometheus struct {
-	Enabled bool `default:"false"`
-	Port    int  `default:"9999"`
+	Enabled    bool   `default:"false"`
+	Port       int    `default:"9999"`
+	PodName    string `split_words:"true"`
+	Deployment string
 }
 
 type Store struct {

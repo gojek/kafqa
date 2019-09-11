@@ -11,7 +11,7 @@ type Creator struct {
 	index uint64
 }
 
-func (c *Creator) NewBytes() ([]byte, error) {
+func (c *Creator) NewMessage() Message {
 	c.index++
 	id := uuid.NewV4()
 	return Message{
@@ -19,7 +19,7 @@ func (c *Creator) NewBytes() ([]byte, error) {
 		ID:          id.String(),
 		CreatedTime: time.Now(),
 		Data:        []byte(fake.ParagraphsN(10)),
-	}.Bytes()
+	}
 }
 
 func New() *Creator {

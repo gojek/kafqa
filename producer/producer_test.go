@@ -5,8 +5,11 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/gojekfarm/kafqa/config"
+	"github.com/gojekfarm/kafqa/creator"
+
 	"github.com/gojekfarm/kafqa/logger"
+
+	"github.com/gojekfarm/kafqa/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -22,13 +25,14 @@ type ProducerSuite struct {
 
 func (s *ProducerSuite) SetupTest() {
 	logger.Setup("")
+
 	s.kafkaProducer = new(kafkaProducerMock)
 	s.creator = new(msgCreatorMock)
 	s.kp = Producer{
 		kafkaProducer: s.kafkaProducer,
 		msgCreator:    s.creator,
 		wg:            &sync.WaitGroup{},
-		messages:      make(chan []byte, 1000),
+		messages:      make(chan creator.Message, 1000),
 	}
 }
 
@@ -40,16 +44,17 @@ func (s *ProducerSuite) TestShouldCallRegisteredCallbacks() {
 		callbackCalled = true
 		ch <- struct{}{}
 	}
-	s.kp.messages = make(chan []byte, 1)
+	prodCh := make(chan *kafka.Message)
+	s.kp.messages = make(chan creator.Message, 1)
 	s.kp.config = config.Producer{TotalMessages: 1, Concurrency: 1, Topic: "sometopic"}
 	opt := Register(callback)
 	opt(&s.kp)
-	s.creator.On("NewBytes").Return([]byte("data1"), nil).Times(1)
+	s.creator.On("NewMessage").Return(creator.Message{}, nil).Times(1)
 	var events chan kafka.Event
 	s.kafkaProducer.On("Produce", mock.AnythingOfType("*kafka.Message"), events).Return(nil).Times(1)
 	s.kafkaProducer.On("Flush", 0).Return(0)
 	s.kafkaProducer.On("Close").Return()
-
+	s.kafkaProducer.On("ProduceChannel").Return(prodCh).Maybe()
 	s.kp.Run(context.Background())
 	<-ch
 	s.kp.Close()
@@ -66,13 +71,16 @@ func (s *ProducerSuite) TestIfAllMessagesAreProduced() {
 	callback := func(message *kafka.Message) {
 		msg <- struct{}{}
 	}
+	prodCh := make(chan *kafka.Message)
 	s.kp.config = config.Producer{TotalMessages: 1000, Concurrency: 10, Topic: "sometopic"}
 	opt := Register(callback)
 	opt(&s.kp)
 	s.kafkaProducer.On("Produce", mock.AnythingOfTypeArgument("*kafka.Message"), events).Return(nil)
 	s.kafkaProducer.On("Close").Return()
 	s.kafkaProducer.On("Flush", 0).Return(0)
-	s.creator.On("NewBytes").Return([]byte("somedata"), nil)
+	s.kafkaProducer.On("ProduceChannel").Return(prodCh).Maybe()
+
+	s.creator.On("NewMessage").Return(creator.Message{}, nil)
 
 	s.kp.Run(context.Background())
 	for i := 0; i < 1000; i++ {
@@ -90,9 +98,9 @@ func TestProducer(t *testing.T) {
 
 type msgCreatorMock struct{ mock.Mock }
 
-func (m *msgCreatorMock) NewBytes() ([]byte, error) {
+func (m *msgCreatorMock) NewMessage() creator.Message {
 	args := m.Called()
-	return args.Get(0).([]byte), args.Error(1)
+	return args.Get(0).(creator.Message)
 }
 
 type kafkaProducerMock struct{ mock.Mock }
@@ -111,3 +119,8 @@ func (m *kafkaProducerMock) Events() chan kafka.Event {
 }
 
 func (m *kafkaProducerMock) Close() { m.Called() }
+
+func (m *kafkaProducerMock) ProduceChannel() chan *kafka.Message {
+	args := m.Called()
+	return args.Get(0).(chan *kafka.Message)
+}
