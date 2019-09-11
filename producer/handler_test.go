@@ -32,7 +32,7 @@ func (s *HandlerSuite) SetupTest() {
 		msgCreator:    s.msgCreator,
 		config:        config.Producer{Topic: "sometopic", TotalMessages: 1000, Concurrency: 10},
 		wg:            &sync.WaitGroup{},
-		messages:      make(chan []byte, 1000),
+		messages:      make(chan creator.Message, 1000),
 	}
 	s.msgStore = new(InMemoryStoreMock)
 }
@@ -51,7 +51,7 @@ func (s *HandlerSuite) TestIfAllMsgsAreTracedIfEventIsKafkaMsg() {
 		events:   eventsCh,
 		msgStore: s.msgStore,
 	}
-	msg, _ := (&creator.Creator{}).NewBytes()
+	msg, _ := (&creator.Creator{}).NewMessage().Bytes()
 	topic := "topic1"
 	kafkaMessage := kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
@@ -65,7 +65,7 @@ func (s *HandlerSuite) TestIfAllMsgsAreTracedIfEventIsKafkaMsg() {
 	s.kafkaProducer.On("Close").Return()
 	s.kafkaProducer.On("Flush", 0).Return(0)
 	s.kafkaProducer.On("ProduceChannel").Return(prodCh).Maybe()
-	s.msgCreator.On("NewBytes").Return([]byte("somedata"), nil)
+	s.msgCreator.On("NewMessage").Return(creator.Message{}, nil)
 	s.msgStore.On("Track", mock.AnythingOfType("store.Trace")).Return(nil)
 
 	wg.Add(1)
@@ -105,7 +105,7 @@ func (s *HandlerSuite) TestIfNoMsgsAreTracedIfEventTypeIsUnknown() {
 	s.kafkaProducer.On("Flush", 0).Return(0)
 	s.kafkaProducer.On("ProduceChannel").Return(prodCh).Maybe()
 
-	s.msgCreator.On("NewBytes").Return([]byte("somedata"), nil)
+	s.msgCreator.On("NewMessage").Return(creator.Message{}, nil)
 	wg.Add(1)
 	s.kp.Run(context.Background())
 	go deliveryHandler.Handle()

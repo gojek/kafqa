@@ -5,6 +5,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/gojekfarm/kafqa/creator"
+
 	"github.com/gojekfarm/kafqa/logger"
 
 	"github.com/gojekfarm/kafqa/config"
@@ -30,7 +32,7 @@ func (s *ProducerSuite) SetupTest() {
 		kafkaProducer: s.kafkaProducer,
 		msgCreator:    s.creator,
 		wg:            &sync.WaitGroup{},
-		messages:      make(chan []byte, 1000),
+		messages:      make(chan creator.Message, 1000),
 	}
 }
 
@@ -43,11 +45,11 @@ func (s *ProducerSuite) TestShouldCallRegisteredCallbacks() {
 		ch <- struct{}{}
 	}
 	prodCh := make(chan *kafka.Message)
-	s.kp.messages = make(chan []byte, 1)
+	s.kp.messages = make(chan creator.Message, 1)
 	s.kp.config = config.Producer{TotalMessages: 1, Concurrency: 1, Topic: "sometopic"}
 	opt := Register(callback)
 	opt(&s.kp)
-	s.creator.On("NewBytes").Return([]byte("data1"), nil).Times(1)
+	s.creator.On("NewMessage").Return(creator.Message{}, nil).Times(1)
 	var events chan kafka.Event
 	s.kafkaProducer.On("Produce", mock.AnythingOfType("*kafka.Message"), events).Return(nil).Times(1)
 	s.kafkaProducer.On("Flush", 0).Return(0)
@@ -78,7 +80,7 @@ func (s *ProducerSuite) TestIfAllMessagesAreProduced() {
 	s.kafkaProducer.On("Flush", 0).Return(0)
 	s.kafkaProducer.On("ProduceChannel").Return(prodCh).Maybe()
 
-	s.creator.On("NewBytes").Return([]byte("somedata"), nil)
+	s.creator.On("NewMessage").Return(creator.Message{}, nil)
 
 	s.kp.Run(context.Background())
 	for i := 0; i < 1000; i++ {
@@ -96,9 +98,9 @@ func TestProducer(t *testing.T) {
 
 type msgCreatorMock struct{ mock.Mock }
 
-func (m *msgCreatorMock) NewBytes() ([]byte, error) {
+func (m *msgCreatorMock) NewMessage() creator.Message {
 	args := m.Called()
-	return args.Get(0).([]byte), args.Error(1)
+	return args.Get(0).(creator.Message)
 }
 
 type kafkaProducerMock struct{ mock.Mock }

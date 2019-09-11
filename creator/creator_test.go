@@ -12,11 +12,11 @@ import (
 
 func TestNewBytesCreatesMessagesInSequence(t *testing.T) {
 	messageCreator := creator.New()
-	messageBytes, _ := messageCreator.NewBytes()
+	messageBytes, _ := messageCreator.NewMessage().Bytes()
 	message, err := creator.FromBytes(messageBytes)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(1), message.Sequence)
-	messageBytes, _ = messageCreator.NewBytes()
+	messageBytes, _ = messageCreator.NewMessage().Bytes()
 	message, err = creator.FromBytes(messageBytes)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(2), message.Sequence)
@@ -24,7 +24,7 @@ func TestNewBytesCreatesMessagesInSequence(t *testing.T) {
 
 func TestAddsUUIDV4AsID(t *testing.T) {
 	messageCreator := creator.New()
-	messageBytes, _ := messageCreator.NewBytes()
+	messageBytes, _ := messageCreator.NewMessage().Bytes()
 	message, err := creator.FromBytes(messageBytes)
 	uid, err := uuid.FromString(message.ID)
 	assert.NoError(t, err)
@@ -33,7 +33,7 @@ func TestAddsUUIDV4AsID(t *testing.T) {
 
 func TestAddsCreationTimeStamp(t *testing.T) {
 	messageCreator := creator.New()
-	messageBytes, _ := messageCreator.NewBytes()
+	messageBytes, _ := messageCreator.NewMessage().Bytes()
 	message, err := creator.FromBytes(messageBytes)
 	assert.NoError(t, err)
 
@@ -43,7 +43,7 @@ func TestAddsCreationTimeStamp(t *testing.T) {
 
 func TestAdds10ParasOfText(t *testing.T) {
 	messageCreator := creator.New()
-	messageBytes, _ := messageCreator.NewBytes()
+	messageBytes, _ := messageCreator.NewMessage().Bytes()
 	message, err := creator.FromBytes(messageBytes)
 	assert.NoError(t, err)
 	assert.Equal(t, 10, len(strings.Split(string(message.Data), "\t")))

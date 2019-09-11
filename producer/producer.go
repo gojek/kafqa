@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gojekfarm/kafqa/creator"
+
 	"github.com/gojekfarm/kafqa/reporter/metrics"
 
 	"github.com/gojekfarm/kafqa/callback"
@@ -14,7 +16,7 @@ import (
 )
 
 type msgCreator interface {
-	NewBytes() ([]byte, error)
+	NewMessage() creator.Message
 }
 
 type kafkaProducer interface {
@@ -28,7 +30,7 @@ type kafkaProducer interface {
 type Producer struct {
 	kafkaProducer
 	config   config.Producer
-	messages chan []byte
+	messages chan creator.Message
 	msgCreator
 	wg        *sync.WaitGroup
 	callbacks []callback.Callback
@@ -50,8 +52,8 @@ func (p Producer) Run(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			default:
-				mBytes, _ := p.msgCreator.NewBytes()
-				p.messages <- mBytes
+				msg := p.msgCreator.NewMessage()
+				p.messages <- msg
 			}
 		}
 		logger.Infof("produced %d messages.", p.config.TotalMessages)
@@ -97,10 +99,12 @@ func (p Producer) ProduceWorker(ctx context.Context) {
 	}
 }
 
-func (p Producer) produceMessage(msg []byte) {
+func (p Producer) produceMessage(msg creator.Message) {
+	msg.CreatedTime = time.Now()
+	mbyte, _ := msg.Bytes()
 	kafkaMsg := kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &p.config.Topic, Partition: kafka.PartitionAny},
-		Value:          msg,
+		Value:          mbyte,
 	}
 	if err := p.kafkaProducer.Produce(&kafkaMsg, nil); err != nil {
 		logger.Errorf("Error producing message to kafka: %v", err)
@@ -128,7 +132,7 @@ func New(prodCfg config.Producer, mc msgCreator, opts ...Option) (*Producer, err
 	producer := &Producer{
 		config:        prodCfg,
 		kafkaProducer: p,
-		messages:      make(chan []byte, 1000),
+		messages:      make(chan creator.Message, 10000),
 		wg:            &sync.WaitGroup{},
 		msgCreator:    mc,
 	}
