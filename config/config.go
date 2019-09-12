@@ -20,6 +20,13 @@ type Config struct {
 	DurationMs  int64  `split_words:"true" default:"10000"`
 }
 
+type LibrdConfigs struct {
+	QueueBufferingMaxMessage int `split_words:"true" default:"100000"`
+	BatchNumMessages         int `split_words:"true" default:"10000"`
+	QueuedMinMessages        int `split_words:"true" default:"10000"`
+	RequestRequiredAcks      int `split_words:"true" default:"1"`
+}
+
 type Producer struct {
 	Enabled          bool   `default:"true"`
 	Topic            string `default:"kafqa_test" envconfig:"KAFKA_TOPIC"`
@@ -32,6 +39,7 @@ type Producer struct {
 	DelayMs          int `split_words:"true" default:"1000"`
 	WorkerDelayMs    int `split_words:"true" default:"50"`
 	Acks             int `default:"1"`
+	Librdconfigs     LibrdConfigs
 }
 
 type Consumer struct {
@@ -46,6 +54,7 @@ type Consumer struct {
 	SecurityProtocol string `split_words:"true" default:"PLAINTEXT"`
 	EnableAutoCommit bool   `split_words:"true" default:"true"`
 	ssl              SSL
+	LibrdConfigs     LibrdConfigs
 }
 
 type SSL struct {
@@ -97,27 +106,30 @@ func (a Application) DevEnvironment() bool {
 
 func (p Producer) KafkaConfig() *kafka.ConfigMap {
 	return &kafka.ConfigMap{
-		KafkaBootstrapServerKey: p.KafkaBrokers,
-		SecurityProtocol:        p.SecurityProtocol,
-		SSLCALocation:           p.ssl.CALocation,
-		SSLKeyLocation:          p.ssl.KeyLocation,
-		SSLKeyPassword:          p.ssl.KeyPassword,
-		SSLCertLocation:         p.ssl.CertificateLocation,
-		ProducerAcknowledgement: p.Acks,
+		KafkaBootstrapServerKey:           p.KafkaBrokers,
+		SecurityProtocol:                  p.SecurityProtocol,
+		SSLCALocation:                     p.ssl.CALocation,
+		SSLKeyLocation:                    p.ssl.KeyLocation,
+		SSLKeyPassword:                    p.ssl.KeyPassword,
+		SSLCertLocation:                   p.ssl.CertificateLocation,
+		ProducerBatchNumMessages:          p.Librdconfigs.BatchNumMessages,
+		ProducerQueueBufferingMaxMessages: p.Librdconfigs.QueueBufferingMaxMessage,
+		ProduceRequestRequiredAcks:        p.Librdconfigs.RequestRequiredAcks,
 	}
 }
 
 func (c Consumer) KafkaConfig() *kafka.ConfigMap {
 	return &kafka.ConfigMap{
-		KafkaBootstrapServerKey: c.KafkaBrokers,
-		ConsumerOffsetResetKey:  c.OffsetReset,
-		ConsumerGroupIDKey:      c.GroupID,
-		SecurityProtocol:        c.SecurityProtocol,
-		SSLCALocation:           c.ssl.CALocation,
-		SSLKeyLocation:          c.ssl.KeyLocation,
-		SSLKeyPassword:          c.ssl.KeyPassword,
-		SSLCertLocation:         c.ssl.CertificateLocation,
-		EnableAutoCommit:        c.EnableAutoCommit,
+		KafkaBootstrapServerKey:   c.KafkaBrokers,
+		ConsumerOffsetResetKey:    c.OffsetReset,
+		ConsumerGroupIDKey:        c.GroupID,
+		SecurityProtocol:          c.SecurityProtocol,
+		SSLCALocation:             c.ssl.CALocation,
+		SSLKeyLocation:            c.ssl.KeyLocation,
+		SSLKeyPassword:            c.ssl.KeyPassword,
+		SSLCertLocation:           c.ssl.CertificateLocation,
+		EnableAutoCommit:          c.EnableAutoCommit,
+		ConsumerQueuedMinMessages: c.LibrdConfigs.QueuedMinMessages,
 	}
 }
 

@@ -19,6 +19,11 @@ func Load() error {
 	if err != nil {
 		return err
 	}
+	var librdConfigs LibrdConfigs
+	err = envconfig.Process("LIBRD", &librdConfigs)
+	if err != nil {
+		return err
+	}
 	err = envconfig.Process("APP", &application.Config)
 	if err != nil {
 		return err
@@ -40,5 +45,7 @@ func Load() error {
 	}
 	application.Consumer.ssl = consumerSslCfg
 	application.Producer.ssl = producerSslCfg
+	application.Producer.Librdconfigs = librdConfigs
+	application.Consumer.LibrdConfigs = librdConfigs
 	return nil
 }

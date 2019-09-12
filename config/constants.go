@@ -11,4 +11,9 @@ const SSLCALocation string = "ssl.ca.location"
 const SSLKeyLocation string = "ssl.key.location"
 const SSLCertLocation string = "ssl.certificate.location"
 const SSLKeyPassword string = "ssl.key.password"
-const ProducerAcknowledgement string = "request.required.acks"
+
+const ProducerQueueBufferingMaxMessages string = "queue.buffering.max.messages"
+const ProducerBatchNumMessages string = "batch.num.messages"
+const ProduceRequestRequiredAcks string = "request.required.acks"
+
+const ConsumerQueuedMinMessages string = "queued.min.messages"
