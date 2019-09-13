@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gojekfarm/kafqa/logger"
+
 	"github.com/gojekfarm/kafqa/config"
 
 	"github.com/DataDog/datadog-go/statsd"
@@ -35,6 +37,7 @@ func SetupStatsD(cfg config.Statsd) {
 	if err != nil {
 		log.Fatalf("failed to setup statsd: %v", err)
 	}
+	logger.Infof("Statsd running on port: %v", cfg.Port)
 	cl.Namespace = fmt.Sprintf("%s.", strings.Trim("kafqa", "."))
 	cl.Tags = cfg.Tags
 	metricsreporter = cl

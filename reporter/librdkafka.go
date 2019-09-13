@@ -40,6 +40,6 @@ func defaultGauges() map[string][]string {
 		"top-level": {"msg_cnt", "msg_size"},
 		"brokers": {"outbuf_msg_cnt", "int_latency.p99", "int_latency.avg",
 			"outbuf_latency.p99", "outbuf_latency.avg", "throttle.avg", "throttle.p99",
-			"rtt_avg", "rtt_p99"},
+			"rtt.avg", "rtt.p99"},
 	}
 }
