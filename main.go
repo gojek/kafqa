@@ -20,6 +20,7 @@ import (
 	"github.com/gojekfarm/kafqa/producer"
 	"github.com/gojekfarm/kafqa/reporter"
 	"github.com/gojekfarm/kafqa/store"
+	"github.com/gojekfarm/kafqa/tracer"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 
@@ -117,6 +118,8 @@ func getConsumer(appCfg config.Application, ms store.MsgStore, wg *sync.WaitGrou
 func setup(appCfg config.Application) (*application, error) {
 	logger.Setup(appCfg.LogLevel())
 	metrics.SetupStatsD(appCfg.Reporter.Statsd)
+	tracer.Setup()
+
 	var wg sync.WaitGroup
 
 	kafkaProducer, err := getProducer(appCfg.Producer)

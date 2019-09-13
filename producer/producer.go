@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gojekfarm/kafqa/creator"
+	"github.com/gojekfarm/kafqa/tracer"
 
 	"github.com/gojekfarm/kafqa/reporter/metrics"
 
@@ -88,11 +89,13 @@ func (p Producer) ProduceWorker(ctx context.Context) {
 	for {
 		select {
 		case msg, ok := <-p.messages:
+			span := tracer.StartSpan("Produce")
 			time.Sleep(time.Millisecond * time.Duration(p.config.WorkerDelayMs))
 			if !ok {
 				return
 			}
 			p.produceMessage(msg)
+			span.Finish()
 		case <-ctx.Done():
 			return
 		}

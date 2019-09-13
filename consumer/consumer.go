@@ -11,6 +11,7 @@ import (
 	"github.com/gojekfarm/kafqa/callback"
 	"github.com/gojekfarm/kafqa/config"
 	"github.com/gojekfarm/kafqa/logger"
+	"github.com/gojekfarm/kafqa/tracer"
 
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
@@ -63,6 +64,7 @@ func (c *Consumer) consumerWorker(ctx context.Context, cons consumer, id int) <-
 		defer func() { close(messages) }()
 
 		for {
+			span := tracer.StartSpan("Consume")
 			c.readMessage(cons, messages, id)
 			select {
 			case <-ctx.Done():
@@ -74,6 +76,7 @@ func (c *Consumer) consumerWorker(ctx context.Context, cons consumer, id int) <-
 				// This is required to preempt goroutine
 				time.Sleep(10 * time.Millisecond)
 			}
+			span.Finish()
 		}
 	}(messages)
 
