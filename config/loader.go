@@ -32,6 +32,10 @@ func Load() error {
 	if err != nil {
 		return err
 	}
+	err = envconfig.Process("STATSD", &application.Reporter.Statsd)
+	if err != nil {
+		return err
+	}
 
 	var consumerSslCfg SSL
 	err = envconfig.Process("CONSUMER", &consumerSslCfg)

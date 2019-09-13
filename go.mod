@@ -3,6 +3,7 @@ module github.com/gojekfarm/kafqa
 go 1.12
 
 require (
+	github.com/DataDog/datadog-go v2.2.0+incompatible
 	github.com/alicebob/gopher-json v0.0.0-20180125190556-5a6b3ba71ee6 // indirect
 	github.com/alicebob/miniredis v2.5.0+incompatible
 	github.com/corpix/uarand v0.1.0 // indirect
@@ -18,6 +19,7 @@ require (
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/prometheus/client_golang v1.0.0
 	github.com/satori/go.uuid v1.2.0
+	github.com/savaki/jq v0.0.0-20161209013833-0e6baecebbf8
 	github.com/stretchr/testify v1.3.0
 	github.com/yuin/gopher-lua v0.0.0-20190514113301-1cd887cd7036 // indirect
 	go.uber.org/atomic v1.4.0 // indirect

@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gojekfarm/kafqa/reporter/metrics"
+
 	"github.com/gojekfarm/kafqa/callback"
 	"github.com/gojekfarm/kafqa/config"
 	"github.com/gojekfarm/kafqa/consumer"
@@ -114,7 +116,7 @@ func getConsumer(appCfg config.Application, ms store.MsgStore, wg *sync.WaitGrou
 
 func setup(appCfg config.Application) (*application, error) {
 	logger.Setup(appCfg.LogLevel())
-
+	metrics.SetupStatsD(appCfg.Reporter.Statsd)
 	var wg sync.WaitGroup
 
 	kafkaProducer, err := getProducer(appCfg.Producer)

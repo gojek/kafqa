@@ -71,6 +71,13 @@ type Prometheus struct {
 	Deployment string
 }
 
+type Statsd struct {
+	Host    string
+	Port    int
+	Enabled bool `default:"false"`
+	Tags    []string
+}
+
 type Store struct {
 	Type      string `default:"memory"`
 	RunID     string `split_words:"true"`
@@ -83,6 +90,7 @@ func (p Prometheus) BindPort() string {
 
 type Reporter struct {
 	Prometheus
+	Statsd
 }
 
 func App() Application {
@@ -115,6 +123,7 @@ func (p Producer) KafkaConfig() *kafka.ConfigMap {
 		ProducerBatchNumMessages:          p.Librdconfigs.BatchNumMessages,
 		ProducerQueueBufferingMaxMessages: p.Librdconfigs.QueueBufferingMaxMessage,
 		ProduceRequestRequiredAcks:        p.Librdconfigs.RequestRequiredAcks,
+		"statistics.interval.ms":       1000,
 	}
 }
 
