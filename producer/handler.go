@@ -3,6 +3,8 @@ package producer
 import (
 	"sync"
 
+	"github.com/gojekfarm/kafqa/reporter"
+
 	"github.com/gojekfarm/kafqa/creator"
 	"github.com/gojekfarm/kafqa/logger"
 	"github.com/gojekfarm/kafqa/store"
@@ -10,9 +12,11 @@ import (
 )
 
 type Handler struct {
-	wg       *sync.WaitGroup
-	events   <-chan kafka.Event
-	msgStore store.MsgStore
+	wg                *sync.WaitGroup
+	events            <-chan kafka.Event
+	msgStore          store.MsgStore
+	librdStatsHandler reporter.LibrdKafkaStatsHandler
+	topic             string
 }
 
 func (h *Handler) Handle() {
@@ -20,6 +24,10 @@ func (h *Handler) Handle() {
 
 	for e := range h.events {
 		switch ev := e.(type) {
+
+		case *kafka.Stats:
+			h.librdStatsHandler.HandleStats(e.String(), h.topic)
+
 		case *kafka.Message:
 			if ev.TopicPartition.Error != nil {
 				logger.Debugf("Delivery failed: %v", ev.TopicPartition)
@@ -34,12 +42,13 @@ func (h *Handler) Handle() {
 					logger.Errorf("Couldn't track message: %v", ev.TopicPartition)
 				}
 			}
+
 		default:
 			logger.Debugf("Unknown event type: %v", e)
 		}
 	}
 }
 
-func NewHandler(events <-chan kafka.Event, wg *sync.WaitGroup, msgStore store.MsgStore) *Handler {
-	return &Handler{events: events, wg: wg, msgStore: msgStore}
+func NewHandler(events <-chan kafka.Event, wg *sync.WaitGroup, msgStore store.MsgStore, topic string) *Handler {
+	return &Handler{events: events, wg: wg, msgStore: msgStore, librdStatsHandler: reporter.NewlibrdKafkaStat(), topic: topic}
 }

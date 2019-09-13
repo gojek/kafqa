@@ -17,3 +17,5 @@ const ProducerBatchNumMessages string = "batch.num.messages"
 const ProduceRequestRequiredAcks string = "request.required.acks"
 
 const ConsumerQueuedMinMessages string = "queued.min.messages"
+
+const LibrdStatisticsIntervalMs string = "statistics.interval.ms"

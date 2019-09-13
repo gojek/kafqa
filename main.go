@@ -149,7 +149,7 @@ func setup(appCfg config.Application) (*application, error) {
 		cancel:     cancel,
 	}
 	if kafkaProducer != nil {
-		app.Handler = producer.NewHandler(kafkaProducer.Events(), &wg, ms)
+		app.Handler = producer.NewHandler(kafkaProducer.Events(), &wg, ms, appCfg.Producer.Topic)
 	}
 	go app.registerSignalHandler()
 	return app, nil
