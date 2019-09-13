@@ -3,8 +3,9 @@ package reporter
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gojekfarm/kafqa/logger"
 	"strconv"
+
+	"github.com/gojekfarm/kafqa/logger"
 
 	"github.com/gojekfarm/kafqa/reporter/metrics"
 	"github.com/savaki/jq"

@@ -25,7 +25,7 @@ type LibrdConfigs struct {
 	BatchNumMessages         int `split_words:"true" default:"10000"`
 	QueuedMinMessages        int `split_words:"true" default:"10000"`
 	RequestRequiredAcks      int `split_words:"true" default:"1"`
-	StatisticsIntervalMs	int `split_words:"true" default:"500"`
+	StatisticsIntervalMs     int `split_words:"true" default:"500"`
 }
 
 type Producer struct {
@@ -124,7 +124,7 @@ func (p Producer) KafkaConfig() *kafka.ConfigMap {
 		ProducerBatchNumMessages:          p.Librdconfigs.BatchNumMessages,
 		ProducerQueueBufferingMaxMessages: p.Librdconfigs.QueueBufferingMaxMessage,
 		ProduceRequestRequiredAcks:        p.Librdconfigs.RequestRequiredAcks,
-		LibrdStatisticsIntervalMs: p.Librdconfigs.StatisticsIntervalMs,
+		LibrdStatisticsIntervalMs:         p.Librdconfigs.StatisticsIntervalMs,
 	}
 }
 

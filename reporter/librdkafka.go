@@ -30,7 +30,7 @@ func NewlibrdKafkaStat() LibrdKafkaStatsHandler {
 
 func defaultCounters() map[string][]string {
 	return map[string][]string{
-		"top-level": {"tx", "rx"},
+		"top-level": {"tx", "rx", "txmsgs", "rxmsgs"},
 		"brokers":   {"tx", "rx"},
 	}
 }
@@ -38,5 +38,8 @@ func defaultCounters() map[string][]string {
 func defaultGauges() map[string][]string {
 	return map[string][]string{
 		"top-level": {"msg_cnt", "msg_size"},
+		"brokers": {"outbuf_msg_cnt", "int_latency.p99", "int_latency.avg",
+			"outbuf_latency.p99", "outbuf_latency.avg", "throttle.avg", "throttle.p99",
+			"rtt_avg", "rtt_p99"},
 	}
 }
