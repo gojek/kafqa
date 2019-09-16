@@ -68,15 +68,17 @@ type SSL struct {
 type Prometheus struct {
 	Enabled    bool   `default:"false"`
 	Port       int    `default:"9999"`
-	PodName    string `split_words:"true"`
-	Deployment string
+	PodName    string `envconfig:"POD_NAME"`
+	Deployment string `envconfig:"DEPLOYMENT"`
 }
 
 type Statsd struct {
-	Host    string
-	Port    int
-	Enabled bool `default:"false"`
-	Tags    []string
+	Host       string
+	Port       int
+	Enabled    bool   `default:"false"`
+	PodName    string `envconfig:"POD_NAME"`
+	Deployment string `envconfig:"DEPLOYMENT"`
+	Tags       []string
 }
 
 type Store struct {

@@ -15,33 +15,33 @@ var (
 	tags = []string{"topic", "pod_name", "deployment"}
 
 	messagesSent = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "messages",
+		Namespace: "kafqa_messages",
 		Name:      "sent",
 	}, tags)
 	messagesReceived = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "messages",
+		Namespace: "kafqa_messages",
 		Name:      "received",
 	}, tags)
 	produceLatency = prometheus.NewSummaryVec(prometheus.SummaryOpts{
-		Namespace:  "latency_ms",
+		Namespace:  "kafqa_latency_ms",
 		Name:       "produce",
 		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
 	}, tags)
 	consumeLatency = prometheus.NewSummaryVec(prometheus.SummaryOpts{
-		Namespace:  "latency_ms",
+		Namespace:  "kafqa_latency_ms",
 		Name:       "receive",
 		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
 	}, tags)
 	producerCount = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "producers",
+		Namespace: "kafqa_producers",
 		Name:      "running",
 	}, tags)
 	consumerCount = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "consumers",
+		Namespace: "kafqa_consumers",
 		Name:      "running",
 	}, tags)
 	producerChannelCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "producer_channel",
+		Namespace: "kafqa_producer_channel",
 		Name:      "messages_queued",
 	}, tags)
 )

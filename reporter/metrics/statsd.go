@@ -39,7 +39,7 @@ func SetupStatsD(cfg config.Statsd) {
 	}
 	logger.Infof("Statsd running on port: %v", cfg.Port)
 	cl.Namespace = fmt.Sprintf("%s.", strings.Trim("kafqa", "."))
-	cl.Tags = cfg.Tags
+	cl.Tags = []string{fmt.Sprintf("pod_name:%s", cfg.PodName), fmt.Sprintf("deployment:%s", cfg.Deployment)}
 	metricsreporter = cl
 }
 
