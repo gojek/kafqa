@@ -1,6 +1,7 @@
 package tracer
 
 import (
+	"context"
 	"io"
 	"time"
 
@@ -9,12 +10,14 @@ import (
 	"github.com/uber/jaeger-client-go"
 	"github.com/uber/jaeger-client-go/config"
 	jgrcfg "github.com/uber/jaeger-client-go/config"
+	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 
 func New() (opentracing.Tracer, io.Closer, error) {
 	tracer, closer, err := getConfig().New(
 		"kafqa",
 		config.Logger(jaeger.StdLogger),
+		config.Gen128Bit(true),
 	)
 	if err != nil {
 		return nil, nil, err
@@ -49,4 +52,21 @@ func getConfig() jgrcfg.Configuration {
 
 func StartSpan(name string) opentracing.Span {
 	return opentracing.GlobalTracer().StartSpan(name)
+}
+
+func StartSpanFromMessage(name string, msg *kafka.Message) opentracing.Span {
+	spanCtx, err := ExtractCtx(msg)
+	if err != nil {
+		logger.Infof("Couldn't extract span from message %v tag: %s", err, name)
+	}
+	return opentracing.StartSpan(name, opentracing.ChildOf(spanCtx))
+}
+
+func StartChildSpan(ctx context.Context, name string) opentracing.Span {
+	spanCtx := opentracing.SpanFromContext(ctx)
+	if spanCtx == nil {
+		logger.Infof("Couldnt' create child context for %s", name)
+		return opentracing.StartSpan(name)
+	}
+	return opentracing.StartSpan(name, opentracing.ChildOf(spanCtx.Context()))
 }

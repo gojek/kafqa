@@ -64,7 +64,7 @@ func (c *Consumer) consumerWorker(ctx context.Context, cons consumer, id int) <-
 		defer func() { close(messages) }()
 
 		for {
-			span := tracer.StartSpan("Consume")
+			//span := tracer.StartSpan("Consume")
 			c.readMessage(cons, messages, id)
 			select {
 			case <-ctx.Done():
@@ -76,7 +76,7 @@ func (c *Consumer) consumerWorker(ctx context.Context, cons consumer, id int) <-
 				// This is required to preempt goroutine
 				time.Sleep(10 * time.Millisecond)
 			}
-			span.Finish()
+			//span.Finish()
 		}
 	}(messages)
 
@@ -93,6 +93,7 @@ func (c *Consumer) readMessage(cons consumer, messages chan<- *kafka.Message, id
 			logger.Errorf("error consuming messages: %+v timeout: %v", err, timeout)
 		}
 	} else {
+		span := tracer.StartSpanFromMessage("kafqa.consumer", msg)
 		messages <- msg
 		if !c.config.EnableAutoCommit && msg != nil {
 			tps, err := cons.CommitMessage(msg)
@@ -100,6 +101,7 @@ func (c *Consumer) readMessage(cons consumer, messages chan<- *kafka.Message, id
 				logger.Errorf("Error committing message: %v, TopicParitions: %v err: %v", msg, tps, err)
 			}
 		}
+		span.Finish()
 	}
 
 }

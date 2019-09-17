@@ -29,6 +29,7 @@ func (h *Handler) Handle() {
 			h.librdStatsHandler.HandleStats(e.String(), h.topic)
 
 		case *kafka.Message:
+			///			span := tracer.StartSpanFromMessage("kafqa.handler", ev)
 			if ev.TopicPartition.Error != nil {
 				logger.Debugf("Delivery failed: %v", ev.TopicPartition)
 			} else {
@@ -42,6 +43,7 @@ func (h *Handler) Handle() {
 					logger.Errorf("Couldn't track message: %v", ev.TopicPartition)
 				}
 			}
+			//			span.Finish()
 
 		default:
 			logger.Debugf("Unknown event type: %v", e)

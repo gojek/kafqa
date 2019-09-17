@@ -21,6 +21,7 @@ require (
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/prometheus/client_golang v1.0.0
 	github.com/satori/go.uuid v1.2.0
+	github.com/savaki/jq v0.0.0-20161209013833-0e6baecebbf8
 	github.com/stretchr/testify v1.3.0
 	github.com/uber-go/atomic v1.4.0 // indirect
 	github.com/uber/jaeger-client-go v2.17.0+incompatible

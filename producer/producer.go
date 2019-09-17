@@ -7,6 +7,7 @@ import (
 
 	"github.com/gojekfarm/kafqa/creator"
 	"github.com/gojekfarm/kafqa/tracer"
+	"github.com/opentracing/opentracing-go"
 
 	"github.com/gojekfarm/kafqa/reporter/metrics"
 
@@ -48,6 +49,7 @@ func (p Producer) Run(ctx context.Context) {
 		defer p.wg.Done()
 		defer close(p.messages)
 
+		span := tracer.StartSpan("kafqa.produce.channel")
 		for i = 0; i < p.config.TotalMessages; i++ {
 			select {
 			case <-ctx.Done():
@@ -57,6 +59,7 @@ func (p Producer) Run(ctx context.Context) {
 				p.messages <- msg
 			}
 		}
+		span.Finish()
 		logger.Infof("produced %d messages.", p.config.TotalMessages)
 	}()
 
@@ -89,26 +92,30 @@ func (p Producer) ProduceWorker(ctx context.Context) {
 	for {
 		select {
 		case msg, ok := <-p.messages:
-			span := tracer.StartSpan("Produce")
-			time.Sleep(time.Millisecond * time.Duration(p.config.WorkerDelayMs))
+			span := opentracing.StartSpan("kafqa.produce.worker")
 			if !ok {
 				return
 			}
-			p.produceMessage(msg)
+			p.produceMessage(opentracing.ContextWithSpan(ctx, span), msg)
 			span.Finish()
+			time.Sleep(time.Millisecond * time.Duration(p.config.WorkerDelayMs))
 		case <-ctx.Done():
 			return
 		}
 	}
 }
 
-func (p Producer) produceMessage(msg creator.Message) {
+func (p Producer) produceMessage(ctx context.Context, msg creator.Message) {
+	span := tracer.StartChildSpan(ctx, "kafqa.produce.kafka")
+	defer span.Finish()
+
 	msg.CreatedTime = time.Now()
 	mbyte, _ := msg.Bytes()
 	kafkaMsg := kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &p.config.Topic, Partition: kafka.PartitionAny},
 		Value:          mbyte,
 	}
+	kafkaMsg.Headers = tracer.Headers(ctx, kafkaMsg.Headers)
 	if err := p.kafkaProducer.Produce(&kafkaMsg, nil); err != nil {
 		logger.Errorf("Error producing message to kafka: %v", err)
 	} else {
