@@ -10,6 +10,7 @@ require (
 	github.com/corpix/uarand v0.1.0 // indirect
 	github.com/go-redis/redis v6.15.2+incompatible
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
+	github.com/hashicorp/go-multierror v1.0.0
 	github.com/icrowley/fake v0.0.0-20180203215853-4178557ae428
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kr/pretty v0.1.0 // indirect

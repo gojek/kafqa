@@ -64,7 +64,6 @@ func (c *Consumer) consumerWorker(ctx context.Context, cons consumer, id int) <-
 		defer func() { close(messages) }()
 
 		for {
-			//span := tracer.StartSpan("Consume")
 			c.readMessage(cons, messages, id)
 			select {
 			case <-ctx.Done():
@@ -76,7 +75,6 @@ func (c *Consumer) consumerWorker(ctx context.Context, cons consumer, id int) <-
 				// This is required to preempt goroutine
 				time.Sleep(10 * time.Millisecond)
 			}
-			//span.Finish()
 		}
 	}(messages)
 

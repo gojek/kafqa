@@ -8,16 +8,14 @@ import (
 	"github.com/gojekfarm/kafqa/logger"
 	"github.com/opentracing/opentracing-go"
 	"github.com/uber/jaeger-client-go"
-	"github.com/uber/jaeger-client-go/config"
 	jgrcfg "github.com/uber/jaeger-client-go/config"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 
 func New() (opentracing.Tracer, io.Closer, error) {
-	tracer, closer, err := getConfig().New(
-		"kafqa",
-		config.Logger(jaeger.StdLogger),
-		config.Gen128Bit(true),
+	tracer, closer, err := getConfig().NewTracer(
+		jgrcfg.Logger(jaeger.StdLogger),
+		jgrcfg.Gen128Bit(true),
 	)
 	if err != nil {
 		return nil, nil, err
@@ -47,6 +45,7 @@ func getConfig() jgrcfg.Configuration {
 			BufferFlushInterval: time.Millisecond * 500,
 			//CollectorEndpoint:   "http://localhost:14268/api/traces",
 		},
+		ServiceName: "kafqa",
 	}
 }
 

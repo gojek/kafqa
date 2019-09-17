@@ -33,7 +33,7 @@ type Producer struct {
 	Topic            string `default:"kafqa_test" envconfig:"KAFKA_TOPIC"`
 	Concurrency      int    `default:"100"`
 	TotalMessages    uint64 `split_words:"true" default:"10000"`
-	KafkaBrokers     string `split_words:"true" required:"true"`
+	KafkaBrokers     string `split_words:"true"`
 	FlushTimeoutMs   int    `split_words:"true" default:"2000"`
 	SecurityProtocol string `split_words:"true" default:"PLAINTEXT"`
 	ssl              SSL
@@ -48,7 +48,7 @@ type Consumer struct {
 	Enabled          bool   `default:"true"`
 	Topic            string `default:"kafqa_test" envconfig:"KAFKA_TOPIC"`
 	Concurrency      int    `default:"20"`
-	KafkaBrokers     string `split_words:"true" required:"true"`
+	KafkaBrokers     string `split_words:"true"`
 	GroupID          string `split_words:"true" default:"kafqa_test_consumer"`
 	OffsetReset      string `split_words:"true" default:"latest"`
 	PollTimeoutMs    int64  `split_words:"true" default:"500"`

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -30,9 +31,10 @@ type application struct {
 	*consumer.Consumer
 	*producer.Handler
 	*sync.WaitGroup
-	ctx        context.Context
-	cancel     context.CancelFunc
-	consumerWg *sync.WaitGroup
+	ctx         context.Context
+	cancel      context.CancelFunc
+	consumerWg  *sync.WaitGroup
+	traceCloser io.Closer
 }
 
 func main() {
@@ -74,6 +76,7 @@ func (app *application) Close() {
 	if app.Consumer != nil {
 		app.Consumer.Close()
 	}
+	app.traceCloser.Close()
 }
 
 func (app *application) Wait() {
@@ -118,7 +121,10 @@ func getConsumer(appCfg config.Application, ms store.MsgStore, wg *sync.WaitGrou
 func setup(appCfg config.Application) (*application, error) {
 	logger.Setup(appCfg.LogLevel())
 	metrics.SetupStatsD(appCfg.Reporter.Statsd)
-	tracer.Setup()
+	closer, err := tracer.Setup()
+	if err != nil {
+		logger.Errorf("Error initializing tracer: %v", err)
+	}
 
 	var wg sync.WaitGroup
 
@@ -143,13 +149,14 @@ func setup(appCfg config.Application) (*application, error) {
 	reporter.Setup(ms, 10, appCfg.Reporter)
 
 	app := &application{
-		msgStore:   ms,
-		Producer:   kafkaProducer,
-		Consumer:   kafkaConsumer,
-		consumerWg: &consWg,
-		WaitGroup:  &wg,
-		ctx:        ctx,
-		cancel:     cancel,
+		msgStore:    ms,
+		Producer:    kafkaProducer,
+		Consumer:    kafkaConsumer,
+		consumerWg:  &consWg,
+		WaitGroup:   &wg,
+		ctx:         ctx,
+		cancel:      cancel,
+		traceCloser: closer,
 	}
 	if kafkaProducer != nil {
 		app.Handler = producer.NewHandler(kafkaProducer.Events(), &wg, ms, appCfg.Producer.Topic)
