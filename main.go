@@ -122,7 +122,7 @@ func getConsumer(appCfg config.Application, ms store.MsgStore, wg *sync.WaitGrou
 func setup(appCfg config.Application) (*application, error) {
 	logger.Setup(appCfg.LogLevel())
 	metrics.SetupStatsD(appCfg.Reporter.Statsd)
-	closer, err := tracer.Setup()
+	closer, err := tracer.Setup(appCfg.Jaeger)
 	if err != nil {
 		logger.Errorf("Error initializing tracer: %v", err)
 	}

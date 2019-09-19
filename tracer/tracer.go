@@ -5,6 +5,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/gojekfarm/kafqa/config"
 	"github.com/gojekfarm/kafqa/logger"
 	"github.com/opentracing/opentracing-go"
 	"github.com/uber/jaeger-client-go"
@@ -12,8 +13,8 @@ import (
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 
-func New() (opentracing.Tracer, io.Closer, error) {
-	tracer, closer, err := getConfig().NewTracer(
+func New(cfg config.Jaeger) (opentracing.Tracer, io.Closer, error) {
+	tracer, closer, err := getConfig(cfg).NewTracer(
 		jgrcfg.Logger(jaeger.StdLogger),
 		jgrcfg.Gen128Bit(true),
 	)
@@ -24,8 +25,8 @@ func New() (opentracing.Tracer, io.Closer, error) {
 	return tracer, closer, nil
 }
 
-func Setup() (io.Closer, error) {
-	tr, closer, err := New()
+func Setup(cfg config.Jaeger) (io.Closer, error) {
+	tr, closer, err := New(cfg)
 	if err != nil {
 		logger.Errorf("[Tracer] error setting up tracer %s", err.Error())
 		return nil, err
@@ -34,18 +35,19 @@ func Setup() (io.Closer, error) {
 	return closer, nil
 }
 
-func getConfig() jgrcfg.Configuration {
+func getConfig(cfg config.Jaeger) jgrcfg.Configuration {
 	return jgrcfg.Configuration{
 		Sampler: &jgrcfg.SamplerConfig{
-			Type:  "const",
-			Param: 1,
+			Type:  cfg.SamplerType,
+			Param: cfg.SamplerParam,
 		},
 		Reporter: &jgrcfg.ReporterConfig{
-			LogSpans:            false,
+			LogSpans:            cfg.ReporterLogSpans,
 			BufferFlushInterval: time.Millisecond * 500,
 			//CollectorEndpoint:   "http://localhost:14268/api/traces",
 		},
-		ServiceName: "kafqa",
+		Disabled:    cfg.Disabled,
+		ServiceName: cfg.ServiceName,
 	}
 }
 

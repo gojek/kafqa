@@ -14,6 +14,7 @@ type Application struct {
 	Reporter
 	Store
 	LibrdConfigs
+	Jaeger
 }
 
 type Config struct {
@@ -87,6 +88,14 @@ type Store struct {
 	Type      string `default:"memory"`
 	RunID     string `split_words:"true"`
 	RedisHost string `split_words:"true"`
+}
+
+type Jaeger struct {
+	Disabled         bool    `default:"false"`
+	ServiceName      string  `split_words:"true" default:"kafqa"`
+	ReporterLogSpans bool    `split_words:"true" default:"false"`
+	SamplerType      string  `split_words:"true" default:"const"`
+	SamplerParam     float64 `split_words:"true" default:"1"`
 }
 
 func (p Prometheus) BindPort() string {

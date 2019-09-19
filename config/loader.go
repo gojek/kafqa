@@ -24,6 +24,7 @@ func Load() error {
 		"APP":        &application.Config,
 		"PROMETHEUS": &application.Reporter.Prometheus,
 		"STATSD":     &application.Reporter.Statsd,
+		"JAEGER":     &application.Jaeger,
 	}
 	if err := loadConfigs(configs); err != nil {
 		return err
