@@ -1,31 +1,42 @@
 package reporter
 
+import "fmt"
+
 type LibrdKafkaStatsHandler struct {
 	counters map[string][]string
 	gauges   map[string][]string
+	tags     []string
 }
 
-func GetStats(stats []string, statsJSON, level, statType, topic string) {
+type LibrdTags struct {
+	ClusterName string
+	Ack         string
+	Topic       string
+}
+
+func GetStats(stats, tags []string, statsJSON, level, statType string) {
 	switch level {
 	case "top-level":
-		TopLevelStats(stats, statsJSON, statType, topic)
+		TopLevelStats(stats, tags, statsJSON, statType)
 	case "brokers":
-		BrokersStats(stats, statsJSON, statType, topic)
+		BrokersStats(stats, tags, statsJSON, statType)
 	}
 }
 
-func (stats LibrdKafkaStatsHandler) HandleStats(statJSON, topic string) {
+func (stats LibrdKafkaStatsHandler) HandleStats(statJSON string) {
 	for k, counterStat := range stats.counters {
-		GetStats(counterStat, statJSON, k, "counter", topic)
+		GetStats(counterStat, stats.tags, statJSON, k, "counter")
 	}
 
 	for k, gaugeStat := range stats.gauges {
-		GetStats(gaugeStat, statJSON, k, "gauge", topic)
+		GetStats(gaugeStat, stats.tags, statJSON, k, "gauge")
 	}
 }
 
-func NewlibrdKafkaStat() LibrdKafkaStatsHandler {
-	return LibrdKafkaStatsHandler{defaultCounters(), defaultGauges()}
+func NewlibrdKafkaStat(tags LibrdTags) LibrdKafkaStatsHandler {
+	librdtags := []string{fmt.Sprintf("topic:%s", tags.Topic),
+		fmt.Sprintf("ack:%s", tags.Ack), fmt.Sprintf("kafka_cluster:%s", tags.ClusterName)}
+	return LibrdKafkaStatsHandler{defaultCounters(), defaultGauges(), librdtags}
 }
 
 func defaultCounters() map[string][]string {

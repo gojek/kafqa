@@ -13,6 +13,7 @@ type Application struct {
 	Config
 	Reporter
 	Store
+	LibrdConfigs
 }
 
 type Config struct {
@@ -41,6 +42,7 @@ type Producer struct {
 	WorkerDelayMs    int `split_words:"true" default:"50"`
 	Acks             int `default:"1"`
 	Librdconfigs     LibrdConfigs
+	ClusterName      string `envconfig:"KAFKA_CLUSTER"`
 }
 
 type Consumer struct {

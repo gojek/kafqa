@@ -34,8 +34,8 @@ func Load() error {
 
 	application.Consumer.ssl = consumerSslCfg
 	application.Producer.ssl = producerSslCfg
-	application.Producer.Librdconfigs = librdConfigs
-	application.Consumer.LibrdConfigs = librdConfigs
+	application.Producer.Librdconfigs = application.Librdconfigs
+	application.Consumer.LibrdConfigs = application.Librdconfigs
 	return nil
 }
 

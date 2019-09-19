@@ -82,7 +82,7 @@ func (p Producer) runProducers(ctx context.Context) {
 	for i := 0; i < p.config.Concurrency; i++ {
 		logger.Debugf("running producer %d on brokers: %s for topic %s", i, p.config.KafkaBrokers, p.config.Topic)
 		go p.ProduceWorker(ctx)
-		metrics.ProducerCount(p.config.Topic)
+		metrics.ProducerCount()
 		p.wg.Add(1)
 	}
 }
@@ -158,7 +158,7 @@ func (p Producer) Poll(ctx context.Context) {
 		select {
 		case <-ticker.C:
 			chanLength := len(p.kafkaProducer.ProduceChannel())
-			metrics.ProducerChannelLength(chanLength, p.config.Topic)
+			metrics.ProducerChannelLength(chanLength)
 			logger.Debugf("Producer channel length: %v", chanLength)
 		case <-ctx.Done():
 			ticker.Stop()

@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gojekfarm/kafqa/config"
@@ -12,7 +13,7 @@ import (
 )
 
 var (
-	tags = []string{"topic", "pod_name", "deployment"}
+	tags = []string{"topic", "pod_name", "deployment", "kafka_cluster", "ack"}
 
 	messagesSent = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "kafqa_messages",
@@ -47,66 +48,82 @@ var (
 )
 
 type promClient struct {
-	enabled    bool
-	port       int
-	pod        string
-	deployment string
+	enabled bool
+	port    int
+}
+
+type promTags struct {
+	topic        string
+	podName      string
+	deployment   string
+	ack          string
+	kafkaCluster string
 }
 
 var prom promClient
+var promtags promTags
 
 func AcknowledgedMessage(msg creator.Message, topic string) {
 	if prom.enabled {
-		messagesReceived.WithLabelValues(topic, prom.pod, prom.deployment).Inc()
+		messagesReceived.WithLabelValues(promtags.topic, promtags.podName, promtags.deployment,
+			promtags.kafkaCluster, promtags.ack).Inc()
 	}
 }
 
-func SentMessage(msg creator.Message, topic string) {
+func SentMessage(msg creator.Message) {
 	if prom.enabled {
-		messagesSent.WithLabelValues(topic, prom.pod, prom.deployment).Inc()
+		messagesSent.WithLabelValues(promtags.topic, promtags.podName, promtags.deployment,
+			promtags.kafkaCluster, promtags.ack).Inc()
 	}
 }
 
-func ConsumerLatency(dur time.Duration, topic string) {
-	if prom.enabled {
-		ms := dur / time.Millisecond
-		consumeLatency.WithLabelValues(topic, prom.pod, prom.deployment).Observe(float64(ms))
-	}
-}
-
-func ProduceLatency(dur time.Duration, topic string) {
+func ConsumerLatency(dur time.Duration) {
 	if prom.enabled {
 		ms := dur / time.Millisecond
-		produceLatency.WithLabelValues(topic, prom.pod, prom.deployment).Observe(float64(ms))
+		consumeLatency.WithLabelValues(promtags.topic, promtags.podName, promtags.deployment,
+			promtags.kafkaCluster, promtags.ack).Observe(float64(ms))
 	}
 }
 
-func ProducerCount(topic string) {
+func ProduceLatency(dur time.Duration) {
 	if prom.enabled {
-		producerCount.WithLabelValues(topic, prom.pod, prom.deployment).Inc()
+		ms := dur / time.Millisecond
+		produceLatency.WithLabelValues(promtags.topic, promtags.podName, promtags.deployment,
+			promtags.kafkaCluster, promtags.ack).Observe(float64(ms))
 	}
 }
 
-func ConsumerCount(topic string) {
+func ProducerCount() {
 	if prom.enabled {
-		consumerCount.WithLabelValues(topic, prom.pod, prom.deployment).Inc()
+		producerCount.WithLabelValues(promtags.topic, promtags.podName, promtags.deployment,
+			promtags.kafkaCluster, promtags.ack).Inc()
 	}
 }
 
-func ProducerChannelLength(count int, topic string) {
+func ConsumerCount() {
 	if prom.enabled {
-		producerChannelCount.WithLabelValues(topic, prom.pod, prom.deployment).Add(float64(count))
+		consumerCount.WithLabelValues(promtags.topic, promtags.podName, promtags.deployment,
+			promtags.kafkaCluster, promtags.ack).Inc()
 	}
 }
 
-func Setup(cfg config.Prometheus) {
+func ProducerChannelLength(count int) {
+	if prom.enabled {
+		producerChannelCount.WithLabelValues(promtags.topic, promtags.podName, promtags.deployment,
+			promtags.kafkaCluster, promtags.ack).Add(float64(count))
+	}
+}
+
+func Setup(cfg config.Prometheus, producerCfg config.Producer) {
 	defer func() {
 		if err := recover(); err != nil {
 			logger.Errorf("Error creating metrics: %v", err)
 		}
 	}()
 
-	prom = promClient{enabled: cfg.Enabled, port: cfg.Port, pod: cfg.PodName, deployment: cfg.Deployment}
+	promtags = promTags{topic: producerCfg.Topic, ack: strconv.Itoa(producerCfg.Acks),
+		kafkaCluster: producerCfg.ClusterName, podName: cfg.PodName, deployment: cfg.Deployment}
+	prom = promClient{enabled: cfg.Enabled, port: cfg.Port}
 	if cfg.Enabled {
 
 		prometheus.MustRegister(messagesSent)

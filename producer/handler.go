@@ -16,7 +16,6 @@ type Handler struct {
 	events            <-chan kafka.Event
 	msgStore          store.MsgStore
 	librdStatsHandler reporter.LibrdKafkaStatsHandler
-	topic             string
 }
 
 func (h *Handler) Handle() {
@@ -26,10 +25,10 @@ func (h *Handler) Handle() {
 		switch ev := e.(type) {
 
 		case *kafka.Stats:
-			h.librdStatsHandler.HandleStats(e.String(), h.topic)
+			h.librdStatsHandler.HandleStats(e.String())
 
 		case *kafka.Message:
-			// TODO: fix this span not availabe in the message
+			// TODO: fix this span not available in the message
 			// span := tracer.StartSpanFromMessage("kafqa.handler", ev)
 			if ev.TopicPartition.Error != nil {
 				logger.Debugf("Delivery failed: %v", ev.TopicPartition)
@@ -52,6 +51,6 @@ func (h *Handler) Handle() {
 	}
 }
 
-func NewHandler(events <-chan kafka.Event, wg *sync.WaitGroup, msgStore store.MsgStore, topic string) *Handler {
-	return &Handler{events: events, wg: wg, msgStore: msgStore, librdStatsHandler: reporter.NewlibrdKafkaStat(), topic: topic}
+func NewHandler(events <-chan kafka.Event, wg *sync.WaitGroup, msgStore store.MsgStore, librdTags reporter.LibrdTags) *Handler {
+	return &Handler{events: events, wg: wg, msgStore: msgStore, librdStatsHandler: reporter.NewlibrdKafkaStat(librdTags)}
 }

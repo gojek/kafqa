@@ -21,13 +21,13 @@ type reporter struct {
 
 var rep reporter
 
-func Setup(sr storeReporter, maxNLatency int, cfg config.Reporter) {
+func Setup(sr storeReporter, maxNLatency int, cfg config.Reporter, producerCfg config.Producer) {
 	rep = reporter{
 		srep:    sr,
 		Latency: NewLatencyReporter(maxNLatency),
 		start:   time.Now(),
 	}
-	metrics.Setup(cfg.Prometheus)
+	metrics.Setup(cfg.Prometheus, producerCfg)
 }
 
 func ConsumptionDelay(t time.Duration) {

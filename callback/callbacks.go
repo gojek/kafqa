@@ -33,7 +33,7 @@ func Acker(ack acknowledger) Callback {
 				logger.Debugf("Unable to acknowledge message: %s", message)
 			}
 			metrics.AcknowledgedMessage(message, *msg.TopicPartition.Topic)
-			metrics.ConsumerLatency(time.Since(message.CreatedTime), *msg.TopicPartition.Topic)
+			metrics.ConsumerLatency(time.Since(message.CreatedTime))
 		}
 	}
 }
@@ -43,8 +43,8 @@ func MessageSent(msg *kafka.Message) {
 	if err != nil {
 		logger.Debugf("Unable to decode message during message sent callback")
 	} else {
-		metrics.SentMessage(message, *msg.TopicPartition.Topic)
-		metrics.ProduceLatency(time.Since(message.CreatedTime), *msg.TopicPartition.Topic)
+		metrics.SentMessage(message)
+		metrics.ProduceLatency(time.Since(message.CreatedTime))
 	}
 }
 

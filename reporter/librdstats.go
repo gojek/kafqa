@@ -18,7 +18,7 @@ func GetValueFromJq(parseStr, statJSON string) ([]byte, error) {
 	return value, err
 }
 
-func BrokersStats(stats []string, statJSON, statsType, topic string) {
+func BrokersStats(stats, tags []string, statJSON, statsType string) {
 	value, _ := GetValueFromJq(".brokers", statJSON)
 	var brokerStat map[string]interface{}
 	err := json.Unmarshal([]byte(string(value)), &brokerStat)
@@ -28,7 +28,7 @@ func BrokersStats(stats []string, statJSON, statsType, topic string) {
 	}
 
 	for brokerName := range brokerStat {
-		tags := []string{fmt.Sprintf("topic:%s", topic), fmt.Sprintf("broker:%s", brokerName)}
+		tags = append(tags, fmt.Sprintf("broker:%s", brokerName))
 		for _, stat := range stats {
 			metricName := fmt.Sprintf("librd.brokers.%s", stat)
 			value, err := GetValueFromJq(fmt.Sprintf(".brokers.%s.%s", brokerName, stat), statJSON)
@@ -49,8 +49,7 @@ func BrokersStats(stats []string, statJSON, statsType, topic string) {
 	}
 }
 
-func TopLevelStats(stats []string, statJSON, statsType, topic string) {
-	tags := []string{fmt.Sprintf("topic:%s", topic)}
+func TopLevelStats(stats, tags []string, statJSON, statsType string) {
 	for _, stat := range stats {
 		metricName := fmt.Sprintf("librd.%s", stat)
 		value, err := GetValueFromJq(fmt.Sprintf(".%s", stat), statJSON)

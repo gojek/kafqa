@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -146,7 +147,7 @@ func setup(appCfg config.Application) (*application, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), appCfg.RunDuration())
 
-	reporter.Setup(ms, 10, appCfg.Reporter)
+	reporter.Setup(ms, 10, appCfg.Reporter, appCfg.Producer)
 
 	app := &application{
 		msgStore:    ms,
@@ -159,7 +160,10 @@ func setup(appCfg config.Application) (*application, error) {
 		traceCloser: closer,
 	}
 	if kafkaProducer != nil {
-		app.Handler = producer.NewHandler(kafkaProducer.Events(), &wg, ms, appCfg.Producer.Topic)
+		librdTags := reporter.LibrdTags{ClusterName: appCfg.Producer.ClusterName,
+			Ack:   strconv.Itoa(appCfg.Librdconfigs.RequestRequiredAcks),
+			Topic: appCfg.Producer.Topic}
+		app.Handler = producer.NewHandler(kafkaProducer.Events(), &wg, ms, librdTags)
 	}
 	go app.registerSignalHandler()
 	return app, nil

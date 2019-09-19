@@ -36,7 +36,7 @@ func (c *Consumer) Run(ctx context.Context) {
 	for i, cons := range c.consumers {
 		c.wg.Add(2)
 		msgs := c.consumerWorker(ctx, cons, i) // goroutine producer
-		metrics.ConsumerCount(c.config.Topic)
+		metrics.ConsumerCount()
 		go c.processor(msgs, i)
 	}
 }
