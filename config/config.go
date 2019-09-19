@@ -23,11 +23,12 @@ type Config struct {
 }
 
 type LibrdConfigs struct {
-	QueueBufferingMaxMessage int `split_words:"true" default:"100000"`
-	BatchNumMessages         int `split_words:"true" default:"10000"`
-	QueuedMinMessages        int `split_words:"true" default:"10000"`
-	RequestRequiredAcks      int `split_words:"true" default:"1"`
-	StatisticsIntervalMs     int `split_words:"true" default:"500"`
+	Enabled                  bool `default:"false"`
+	QueueBufferingMaxMessage int  `split_words:"true" default:"100000"`
+	BatchNumMessages         int  `split_words:"true" default:"10000"`
+	QueuedMinMessages        int  `split_words:"true" default:"10000"`
+	RequestRequiredAcks      int  `split_words:"true" default:"1"`
+	StatisticsIntervalMs     int  `split_words:"true" default:"500"`
 }
 
 type Producer struct {
@@ -91,7 +92,7 @@ type Store struct {
 }
 
 type Jaeger struct {
-	Disabled         bool    `default:"false"`
+	Disabled         bool    `default:"true"`
 	ServiceName      string  `split_words:"true" default:"kafqa"`
 	ReporterLogSpans bool    `split_words:"true" default:"false"`
 	SamplerType      string  `split_words:"true" default:"const"`

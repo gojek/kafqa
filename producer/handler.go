@@ -16,6 +16,7 @@ type Handler struct {
 	events            <-chan kafka.Event
 	msgStore          store.MsgStore
 	librdStatsHandler reporter.LibrdKafkaStatsHandler
+	librdStatsEnabled bool
 }
 
 func (h *Handler) Handle() {
@@ -25,7 +26,9 @@ func (h *Handler) Handle() {
 		switch ev := e.(type) {
 
 		case *kafka.Stats:
-			h.librdStatsHandler.HandleStats(e.String())
+			if h.librdStatsEnabled {
+				h.librdStatsHandler.HandleStats(e.String())
+			}
 
 		case *kafka.Message:
 			// TODO: fix this span not available in the message
@@ -51,6 +54,12 @@ func (h *Handler) Handle() {
 	}
 }
 
-func NewHandler(events <-chan kafka.Event, wg *sync.WaitGroup, msgStore store.MsgStore, librdTags reporter.LibrdTags) *Handler {
-	return &Handler{events: events, wg: wg, msgStore: msgStore, librdStatsHandler: reporter.NewlibrdKafkaStat(librdTags)}
+func NewHandler(events <-chan kafka.Event, wg *sync.WaitGroup, msgStore store.MsgStore, librdTags reporter.LibrdTags, librdStatsEnabled bool) *Handler {
+	return &Handler{
+		events:            events,
+		wg:                wg,
+		msgStore:          msgStore,
+		librdStatsHandler: reporter.NewlibrdKafkaStat(librdTags),
+		librdStatsEnabled: librdStatsEnabled,
+	}
 }

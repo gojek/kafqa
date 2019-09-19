@@ -58,7 +58,7 @@ func StartSpan(name string) opentracing.Span {
 func StartSpanFromMessage(name string, msg *kafka.Message) opentracing.Span {
 	spanCtx, err := ExtractCtx(msg)
 	if err != nil {
-		logger.Infof("Couldn't extract span from message %v tag: %s", err, name)
+		logger.Debugf("Couldn't extract span from message %v tag: %s", err, name)
 	}
 	return opentracing.StartSpan(name, opentracing.ChildOf(spanCtx))
 }

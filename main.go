@@ -163,7 +163,7 @@ func setup(appCfg config.Application) (*application, error) {
 		librdTags := reporter.LibrdTags{ClusterName: appCfg.Producer.ClusterName,
 			Ack:   strconv.Itoa(appCfg.Librdconfigs.RequestRequiredAcks),
 			Topic: appCfg.Producer.Topic}
-		app.Handler = producer.NewHandler(kafkaProducer.Events(), &wg, ms, librdTags)
+		app.Handler = producer.NewHandler(kafkaProducer.Events(), &wg, ms, librdTags, appCfg.Librdconfigs.Enabled)
 	}
 	go app.registerSignalHandler()
 	return app, nil
