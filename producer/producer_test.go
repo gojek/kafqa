@@ -2,11 +2,12 @@ package producer
 
 import (
 	"context"
-	"github.com/gojekfarm/kafqa/creator"
-	"github.com/gojekfarm/kafqa/logger"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/gojekfarm/kafqa/creator"
+	"github.com/gojekfarm/kafqa/logger"
 
 	"github.com/gojekfarm/kafqa/config"
 	"github.com/stretchr/testify/assert"
@@ -110,12 +111,9 @@ func (s *ProducerSuite) TestIfMessagesAreProducedInfinitely() {
 	s.creator.On("NewMessage").Return(creator.Message{}, nil)
 
 	d := time.Now().Add(50 * time.Millisecond)
-	ctx, _ := context.WithDeadline(context.Background(), d)
+	ctx, cancel := context.WithDeadline(context.Background(), d)
+	defer cancel()
 	s.kp.Run(ctx)
-
-	for i := 0; i < 10; i++ {
-		<-msg
-	}
 
 	s.kp.Close()
 	assert.GreaterOrEqual(t, len(s.kafkaProducer.Calls), 1)
