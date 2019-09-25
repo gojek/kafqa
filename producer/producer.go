@@ -50,35 +50,17 @@ func (p Producer) Run(ctx context.Context) {
 		defer close(p.messages)
 
 		span := tracer.StartSpan("kafqa.produce.channel")
-		if p.config.TotalMessages == -1 {
-			for {
-				select {
-				case <-ctx.Done():
-					span.Finish()
-					logger.Infof("produced %d messages.", i)
-					return
-				default:
-					i++
-					msg := p.msgCreator.NewMessage()
-					p.messages <- msg
-				}
+		for i = 0; p.config.TotalMessages == -1 || i < p.config.TotalMessages; i++ {
+			select {
+			case <-ctx.Done():
+				span.Finish()
+				return
+			default:
+				msg := p.msgCreator.NewMessage()
+				p.messages <- msg
 			}
-		} else {
-			for i = 0; i < p.config.TotalMessages; i++ {
-				select {
-				case <-ctx.Done():
-					return
-				default:
-					msg := p.msgCreator.NewMessage()
-					p.messages <- msg
-				}
-			}
-			span.Finish()
-			logger.Infof("produced %d messages.", p.config.TotalMessages)
 		}
-
 	}()
-
 }
 
 func (p *Producer) Register(cb callback.Callback) {
