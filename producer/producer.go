@@ -60,6 +60,7 @@ func (p Producer) Run(ctx context.Context) {
 				p.messages <- msg
 			}
 		}
+		span.Finish()
 	}()
 }
 
