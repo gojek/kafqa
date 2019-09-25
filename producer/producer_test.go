@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/gojekfarm/kafqa/creator"
-
 	"github.com/gojekfarm/kafqa/logger"
 
 	"github.com/gojekfarm/kafqa/config"
@@ -88,6 +88,35 @@ func (s *ProducerSuite) TestIfAllMessagesAreProduced() {
 	}
 	s.kp.Close()
 	s.kafkaProducer.AssertNumberOfCalls(t, "Produce", 1000)
+	s.kafkaProducer.AssertExpectations(t)
+	s.creator.AssertExpectations(t)
+}
+
+func (s *ProducerSuite) TestIfMessagesAreProducedInfinitely() {
+	t := s.T()
+	msg := make(chan struct{}, 1000)
+	var events chan kafka.Event
+	callback := func(message *kafka.Message) {
+		msg <- struct{}{}
+	}
+	prodCh := make(chan *kafka.Message)
+	s.kp.config = config.Producer{TotalMessages: -1, Concurrency: 10, Topic: "sometopic"}
+	opt := Register(callback)
+	opt(&s.kp)
+	s.kafkaProducer.On("Produce", mock.AnythingOfTypeArgument("*kafka.Message"), events).Return(nil)
+	s.kafkaProducer.On("Close").Return()
+	s.kafkaProducer.On("Flush", 0).Return(0)
+	s.kafkaProducer.On("ProduceChannel").Return(prodCh).Maybe()
+
+	s.creator.On("NewMessage").Return(creator.Message{}, nil)
+
+	d := time.Now().Add(50 * time.Millisecond)
+	ctx, cancel := context.WithDeadline(context.Background(), d)
+	defer cancel()
+	s.kp.Run(ctx)
+
+	s.kp.Close()
+	assert.GreaterOrEqual(t, len(s.kafkaProducer.Calls), 1)
 	s.kafkaProducer.AssertExpectations(t)
 	s.creator.AssertExpectations(t)
 }

@@ -50,6 +50,7 @@ message {
 
 ### Running separate consumer and producers
 * `CONSUMER_ENABLED, PRODUCER_ENABLED` can be set to only run specific component
+* setting `PRODUCER_TOTAL_MESSAGES=-1` will produce the messages infinitely.
 
 ```
 # run only consumer

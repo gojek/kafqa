@@ -24,34 +24,36 @@ func (h *Handler) Handle() {
 
 	for e := range h.events {
 		switch ev := e.(type) {
-
 		case *kafka.Stats:
 			if h.librdStatsEnabled {
 				h.librdStatsHandler.HandleStats(e.String())
 			}
-
 		case *kafka.Message:
-			// TODO: fix this span not available in the message
-			// span := tracer.StartSpanFromMessage("kafqa.handler", ev)
-			if ev.TopicPartition.Error != nil {
-				logger.Debugf("Delivery failed: %v", ev.TopicPartition)
-			} else {
-				msg, err := creator.FromBytes(ev.Value)
-				if err != nil {
-					logger.Errorf("Decoding Message failed: %v", ev.TopicPartition)
-				}
-				trace := store.Trace{Message: msg, TopicPartition: ev.TopicPartition}
-				err = h.msgStore.Track(trace)
-				if err != nil {
-					logger.Errorf("Couldn't track message: %v", ev.TopicPartition)
-				}
-			}
-			// span.Finish()
-
+			h.handleKafkaMessage(ev)
 		default:
 			logger.Debugf("Unknown event type: %v", e)
 		}
 	}
+}
+
+func (h *Handler) handleKafkaMessage(ev *kafka.Message) {
+	// TODO: fix this span not available in the message
+	// span := tracer.StartSpanFromMessage("kafqa.handler", ev)
+	if ev.TopicPartition.Error != nil {
+		logger.Debugf("Delivery failed: %v", ev.TopicPartition)
+	} else {
+		msg, err := creator.FromBytes(ev.Value)
+		if err != nil {
+			logger.Errorf("Decoding Message failed: %v", ev.TopicPartition)
+		}
+		trace := store.Trace{Message: msg, TopicPartition: ev.TopicPartition}
+		err = h.msgStore.Track(trace)
+		if err != nil {
+			logger.Errorf("Couldn't track message: %v", ev.TopicPartition)
+		}
+	}
+	// span.Finish()
+
 }
 
 func NewHandler(events <-chan kafka.Event, wg *sync.WaitGroup, msgStore store.MsgStore, librdTags reporter.LibrdTags, librdStatsEnabled bool) *Handler {

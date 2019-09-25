@@ -144,8 +144,14 @@ func setup(appCfg config.Application) (*application, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), appCfg.RunDuration())
+	var ctx context.Context
+	var cancel context.CancelFunc
+	// To produce infinitely
+	if appCfg.TotalMessages == -1 {
+		ctx, cancel = context.WithCancel(context.Background())
+	} else {
+		ctx, cancel = context.WithTimeout(context.Background(), appCfg.RunDuration())
+	}
 
 	reporter.Setup(ms, 10, appCfg.Reporter, appCfg.Producer)
 
