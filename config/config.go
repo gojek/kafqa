@@ -35,7 +35,7 @@ type Producer struct {
 	Enabled          bool   `default:"true"`
 	Topic            string `default:"kafqa_test" envconfig:"KAFKA_TOPIC"`
 	Concurrency      int    `default:"100"`
-	TotalMessages    uint64 `split_words:"true" default:"10000"`
+	TotalMessages    int64  `split_words:"true" default:"10000"`
 	KafkaBrokers     string `split_words:"true"`
 	FlushTimeoutMs   int    `split_words:"true" default:"2000"`
 	SecurityProtocol string `split_words:"true" default:"PLAINTEXT"`

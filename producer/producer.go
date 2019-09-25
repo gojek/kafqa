@@ -41,7 +41,7 @@ type Producer struct {
 func (p Producer) Run(ctx context.Context) {
 	go p.Poll(ctx)
 	go p.runProducers(ctx)
-	var i uint64
+	var i int64
 	logger.Debugf("started producing to chan....")
 
 	p.wg.Add(1)
@@ -50,17 +50,33 @@ func (p Producer) Run(ctx context.Context) {
 		defer close(p.messages)
 
 		span := tracer.StartSpan("kafqa.produce.channel")
-		for i = 0; i < p.config.TotalMessages; i++ {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				msg := p.msgCreator.NewMessage()
-				p.messages <- msg
+		if p.config.TotalMessages == -1 {
+			for {
+				select {
+				case <-ctx.Done():
+					span.Finish()
+					logger.Infof("produced %d messages.", i)
+					return
+				default:
+					i++
+					msg := p.msgCreator.NewMessage()
+					p.messages <- msg
+				}
 			}
+		} else {
+			for i = 0; i < p.config.TotalMessages; i++ {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					msg := p.msgCreator.NewMessage()
+					p.messages <- msg
+				}
+			}
+			span.Finish()
+			logger.Infof("produced %d messages.", p.config.TotalMessages)
 		}
-		span.Finish()
-		logger.Infof("produced %d messages.", p.config.TotalMessages)
+
 	}()
 
 }
