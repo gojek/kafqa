@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gojekfarm/kafqa/serde"
+
 	"github.com/gojekfarm/kafqa/creator"
 	"github.com/gojekfarm/kafqa/logger"
 
@@ -20,6 +22,7 @@ type ProducerSuite struct {
 	suite.Suite
 	kafkaProducer *kafkaProducerMock
 	creator       *msgCreatorMock
+	encoder       serde.Encoder
 	kp            Producer
 }
 
@@ -31,9 +34,11 @@ func (s *ProducerSuite) SetupTest() {
 	s.kp = Producer{
 		kafkaProducer: s.kafkaProducer,
 		msgCreator:    s.creator,
+		encoder:       serde.KafqaParser{},
 		wg:            &sync.WaitGroup{},
 		messages:      make(chan creator.Message, 1000),
 	}
+	s.encoder = serde.KafqaParser{}
 }
 
 func (s *ProducerSuite) TestShouldCallRegisteredCallbacks() {
@@ -46,10 +51,11 @@ func (s *ProducerSuite) TestShouldCallRegisteredCallbacks() {
 	}
 	prodCh := make(chan *kafka.Message)
 	s.kp.messages = make(chan creator.Message, 1)
+	s.encoder = serde.KafqaParser{}
 	s.kp.config = config.Producer{TotalMessages: 1, Concurrency: 1, Topic: "sometopic"}
 	opt := Register(callback)
 	opt(&s.kp)
-	s.creator.On("NewMessage").Return(creator.Message{}, nil).Times(1)
+	s.creator.On("NewMessageWithFakeData").Return(creator.Message{}, nil).Times(1)
 	var events chan kafka.Event
 	s.kafkaProducer.On("Produce", mock.AnythingOfType("*kafka.Message"), events).Return(nil).Times(1)
 	s.kafkaProducer.On("Flush", 0).Return(0)
@@ -72,6 +78,7 @@ func (s *ProducerSuite) TestIfAllMessagesAreProduced() {
 		msg <- struct{}{}
 	}
 	prodCh := make(chan *kafka.Message)
+	s.encoder = serde.KafqaParser{}
 	s.kp.config = config.Producer{TotalMessages: 1000, Concurrency: 10, Topic: "sometopic"}
 	opt := Register(callback)
 	opt(&s.kp)
@@ -80,7 +87,7 @@ func (s *ProducerSuite) TestIfAllMessagesAreProduced() {
 	s.kafkaProducer.On("Flush", 0).Return(0)
 	s.kafkaProducer.On("ProduceChannel").Return(prodCh).Maybe()
 
-	s.creator.On("NewMessage").Return(creator.Message{}, nil)
+	s.creator.On("NewMessageWithFakeData").Return(creator.Message{}, nil)
 
 	s.kp.Run(context.Background())
 	for i := 0; i < 1000; i++ {
@@ -100,6 +107,7 @@ func (s *ProducerSuite) TestIfMessagesAreProducedInfinitely() {
 		msg <- struct{}{}
 	}
 	prodCh := make(chan *kafka.Message)
+	s.encoder = serde.KafqaParser{}
 	s.kp.config = config.Producer{TotalMessages: -1, Concurrency: 10, Topic: "sometopic"}
 	opt := Register(callback)
 	opt(&s.kp)
@@ -108,7 +116,7 @@ func (s *ProducerSuite) TestIfMessagesAreProducedInfinitely() {
 	s.kafkaProducer.On("Flush", 0).Return(0)
 	s.kafkaProducer.On("ProduceChannel").Return(prodCh).Maybe()
 
-	s.creator.On("NewMessage").Return(creator.Message{}, nil)
+	s.creator.On("NewMessageWithFakeData").Return(creator.Message{}, nil)
 
 	d := time.Now().Add(50 * time.Millisecond)
 	ctx, cancel := context.WithDeadline(context.Background(), d)
@@ -127,7 +135,7 @@ func TestProducer(t *testing.T) {
 
 type msgCreatorMock struct{ mock.Mock }
 
-func (m *msgCreatorMock) NewMessage() creator.Message {
+func (m *msgCreatorMock) NewMessageWithFakeData() creator.Message {
 	args := m.Called()
 	return args.Get(0).(creator.Message)
 }

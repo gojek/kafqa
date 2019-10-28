@@ -17,14 +17,15 @@ func Load() error {
 	}
 
 	configs := map[string]interface{}{
-		"STORE":      &application.Store,
-		"PRODUCER":   &application.Producer,
-		"CONSUMER":   &application.Consumer,
-		"LIBRD":      &librdConfigs,
-		"APP":        &application.Config,
-		"PROMETHEUS": &application.Reporter.Prometheus,
-		"STATSD":     &application.Reporter.Statsd,
-		"JAEGER":     &application.Jaeger,
+		"STORE":        &application.Store,
+		"PRODUCER":     &application.Producer,
+		"CONSUMER":     &application.Consumer,
+		"LIBRD":        &librdConfigs,
+		"APP":          &application.Config,
+		"PROMETHEUS":   &application.Reporter.Prometheus,
+		"STATSD":       &application.Reporter.Statsd,
+		"JAEGER":       &application.Jaeger,
+		"PROTO_PARSER": &application.ProtoParser,
 	}
 	if err := loadConfigs(configs); err != nil {
 		return err

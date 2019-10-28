@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gojekfarm/kafqa/logger"
+	"github.com/gojekfarm/kafqa/serde"
 
 	"github.com/gojekfarm/kafqa/config"
 	"github.com/gojekfarm/kafqa/creator"
@@ -21,6 +22,7 @@ type HandlerSuite struct {
 	msgCreator    *msgCreatorMock
 	msgStore      *InMemoryStoreMock
 	kp            Producer
+	decoder       serde.Decoder
 }
 
 func (s *HandlerSuite) SetupTest() {
@@ -30,11 +32,13 @@ func (s *HandlerSuite) SetupTest() {
 	s.kp = Producer{
 		kafkaProducer: s.kafkaProducer,
 		msgCreator:    s.msgCreator,
+		encoder:       serde.KafqaParser{},
 		config:        config.Producer{Topic: "sometopic", TotalMessages: 1000, Concurrency: 10},
 		wg:            &sync.WaitGroup{},
 		messages:      make(chan creator.Message, 1000),
 	}
 	s.msgStore = new(InMemoryStoreMock)
+	s.decoder = serde.KafqaParser{}
 }
 
 func (s *HandlerSuite) TestIfAllMsgsAreTracedIfEventIsKafkaMsg() {
@@ -50,8 +54,9 @@ func (s *HandlerSuite) TestIfAllMsgsAreTracedIfEventIsKafkaMsg() {
 		wg:       wg,
 		events:   eventsCh,
 		msgStore: s.msgStore,
+		decoder:  s.decoder,
 	}
-	msg, _ := (&creator.Creator{}).NewMessage().Bytes()
+	msg, _ := serde.KafqaParser{}.Bytes((&creator.Creator{}).NewMessageWithFakeData())
 	topic := "topic1"
 	kafkaMessage := kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
@@ -65,7 +70,7 @@ func (s *HandlerSuite) TestIfAllMsgsAreTracedIfEventIsKafkaMsg() {
 	s.kafkaProducer.On("Close").Return()
 	s.kafkaProducer.On("Flush", 0).Return(0)
 	s.kafkaProducer.On("ProduceChannel").Return(prodCh).Maybe()
-	s.msgCreator.On("NewMessage").Return(creator.Message{}, nil)
+	s.msgCreator.On("NewMessageWithFakeData").Return(creator.Message{}, nil)
 	s.msgStore.On("Track", mock.AnythingOfType("store.Trace")).Return(nil)
 
 	wg.Add(1)
@@ -95,6 +100,7 @@ func (s *HandlerSuite) TestIfNoMsgsAreTracedIfEventTypeIsUnknown() {
 		wg:       wg,
 		events:   eventsCh,
 		msgStore: s.msgStore,
+		decoder:  s.decoder,
 	}
 	prodCh := make(chan *kafka.Message)
 	var events chan kafka.Event
@@ -105,7 +111,7 @@ func (s *HandlerSuite) TestIfNoMsgsAreTracedIfEventTypeIsUnknown() {
 	s.kafkaProducer.On("Flush", 0).Return(0)
 	s.kafkaProducer.On("ProduceChannel").Return(prodCh).Maybe()
 
-	s.msgCreator.On("NewMessage").Return(creator.Message{}, nil)
+	s.msgCreator.On("NewMessageWithFakeData").Return(creator.Message{}, nil)
 	wg.Add(1)
 	s.kp.Run(context.Background())
 	go deliveryHandler.Handle()

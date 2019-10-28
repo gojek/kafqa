@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package com.esb.userLocation;
+
+import "google/protobuf/timestamp.proto";
+
+message userLocationLogMessage {
+    string order_number = 1;
+    string order_url = 2;
+    string order_details = 3;
+    google.protobuf.Timestamp event_timestamp = 4;
+
+}

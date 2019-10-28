@@ -11,7 +11,7 @@ type Creator struct {
 	index uint64
 }
 
-func (c *Creator) NewMessage() Message {
+func (c *Creator) NewMessageWithFakeData() Message {
 	c.index++
 	id := uuid.NewV4()
 	return Message{
@@ -19,6 +19,17 @@ func (c *Creator) NewMessage() Message {
 		ID:          id.String(),
 		CreatedTime: time.Now(),
 		Data:        []byte(fake.ParagraphsN(10)),
+	}
+}
+
+func (c *Creator) NewMessage(data []byte, createdTime time.Time) Message {
+	c.index++
+	id := uuid.NewV4()
+	return Message{
+		Sequence:    c.index,
+		ID:          id.String(),
+		CreatedTime: createdTime,
+		Data:        data,
 	}
 }
 

@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package com.esb.userLocation;
+
+import "google/protobuf/timestamp.proto";
+
+
+message userLocationLogMessage {
+    google.protobuf.Timestamp event_timestamp = 3;
+
+}
