@@ -6,26 +6,29 @@ import (
 	"time"
 
 	"github.com/gojekfarm/kafqa/creator"
+	"github.com/gojekfarm/kafqa/serde"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewBytesCreatesMessagesInSequence(t *testing.T) {
 	messageCreator := creator.New()
-	messageBytes, _ := messageCreator.NewMessage().Bytes()
-	message, err := creator.FromBytes(messageBytes)
+	parser := serde.KafqaParser{}
+	messageBytes, _ := parser.Bytes(messageCreator.NewMessageWithFakeData())
+	message, err := parser.FromBytes(messageBytes)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(1), message.Sequence)
-	messageBytes, _ = messageCreator.NewMessage().Bytes()
-	message, err = creator.FromBytes(messageBytes)
+	messageBytes, _ = parser.Bytes(messageCreator.NewMessageWithFakeData())
+	message, err = parser.FromBytes(messageBytes)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(2), message.Sequence)
 }
 
 func TestAddsUUIDV4AsID(t *testing.T) {
 	messageCreator := creator.New()
-	messageBytes, _ := messageCreator.NewMessage().Bytes()
-	message, err := creator.FromBytes(messageBytes)
+	parser := serde.KafqaParser{}
+	messageBytes, _ := parser.Bytes(messageCreator.NewMessageWithFakeData())
+	message, err := parser.FromBytes(messageBytes)
 	uid, err := uuid.FromString(message.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, uuid.V4, uid.Version())
@@ -33,8 +36,9 @@ func TestAddsUUIDV4AsID(t *testing.T) {
 
 func TestAddsCreationTimeStamp(t *testing.T) {
 	messageCreator := creator.New()
-	messageBytes, _ := messageCreator.NewMessage().Bytes()
-	message, err := creator.FromBytes(messageBytes)
+	parser := serde.KafqaParser{}
+	messageBytes, _ := parser.Bytes(messageCreator.NewMessageWithFakeData())
+	message, err := parser.FromBytes(messageBytes)
 	assert.NoError(t, err)
 
 	createdSince := time.Since(message.CreatedTime)
@@ -43,8 +47,22 @@ func TestAddsCreationTimeStamp(t *testing.T) {
 
 func TestAdds10ParasOfText(t *testing.T) {
 	messageCreator := creator.New()
-	messageBytes, _ := messageCreator.NewMessage().Bytes()
-	message, err := creator.FromBytes(messageBytes)
+	parser := serde.KafqaParser{}
+	messageBytes, _ := parser.Bytes(messageCreator.NewMessageWithFakeData())
+	message, err := parser.FromBytes(messageBytes)
 	assert.NoError(t, err)
 	assert.Equal(t, 10, len(strings.Split(string(message.Data), "\t")))
+}
+
+func TestAddsDataWhenTheDataIsPassed(t *testing.T) {
+	messageCreator := creator.New()
+	parser := serde.KafqaParser{}
+	testData := []byte("test")
+	testTime := time.Now()
+	messageBytes, _ := parser.Bytes(messageCreator.NewMessage(testData, testTime))
+	message, err := parser.FromBytes(messageBytes)
+	assert.NoError(t, err)
+	assert.Equal(t, true, testTime.Equal(message.CreatedTime))
+	assert.Equal(t, testData, message.Data)
+
 }

@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gojekfarm/kafqa/serde"
+
 	"github.com/gojekfarm/kafqa/creator"
 	"github.com/gojekfarm/kafqa/tracer"
 	"github.com/opentracing/opentracing-go"
@@ -18,7 +20,7 @@ import (
 )
 
 type msgCreator interface {
-	NewMessage() creator.Message
+	NewMessageWithFakeData() creator.Message
 }
 
 type kafkaProducer interface {
@@ -34,6 +36,7 @@ type Producer struct {
 	config   config.Producer
 	messages chan creator.Message
 	msgCreator
+	encoder   serde.Encoder
 	wg        *sync.WaitGroup
 	callbacks []callback.Callback
 }
@@ -56,7 +59,7 @@ func (p Producer) Run(ctx context.Context) {
 				span.Finish()
 				return
 			default:
-				msg := p.msgCreator.NewMessage()
+				msg := p.msgCreator.NewMessageWithFakeData()
 				p.messages <- msg
 			}
 		}
@@ -109,7 +112,7 @@ func (p Producer) produceMessage(ctx context.Context, msg creator.Message) {
 	defer span.Finish()
 
 	msg.CreatedTime = time.Now()
-	mbyte, _ := msg.Bytes()
+	mbyte, _ := p.encoder.Bytes(msg)
 	kafkaMsg := kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &p.config.Topic, Partition: kafka.PartitionAny},
 		Value:          mbyte,
@@ -133,7 +136,7 @@ func Register(cb callback.Callback) Option {
 
 type Option func(*Producer)
 
-func New(prodCfg config.Producer, mc msgCreator, opts ...Option) (*Producer, error) {
+func New(prodCfg config.Producer, mc msgCreator, encoder serde.Encoder, opts ...Option) (*Producer, error) {
 	p, err := kafka.NewProducer(prodCfg.KafkaConfig())
 	if err != nil {
 		return nil, err
@@ -142,6 +145,7 @@ func New(prodCfg config.Producer, mc msgCreator, opts ...Option) (*Producer, err
 		config:        prodCfg,
 		kafkaProducer: p,
 		messages:      make(chan creator.Message, 10000),
+		encoder:       encoder,
 		wg:            &sync.WaitGroup{},
 		msgCreator:    mc,
 	}

@@ -3,9 +3,10 @@ package producer
 import (
 	"sync"
 
+	"github.com/gojekfarm/kafqa/serde"
+
 	"github.com/gojekfarm/kafqa/reporter"
 
-	"github.com/gojekfarm/kafqa/creator"
 	"github.com/gojekfarm/kafqa/logger"
 	"github.com/gojekfarm/kafqa/store"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
@@ -16,6 +17,7 @@ type Handler struct {
 	events            <-chan kafka.Event
 	msgStore          store.MsgStore
 	librdStatsHandler reporter.LibrdKafkaStatsHandler
+	decoder           serde.Decoder
 	librdStatsEnabled bool
 }
 
@@ -42,7 +44,7 @@ func (h *Handler) handleKafkaMessage(ev *kafka.Message) {
 	if ev.TopicPartition.Error != nil {
 		logger.Debugf("Delivery failed: %v", ev.TopicPartition)
 	} else {
-		msg, err := creator.FromBytes(ev.Value)
+		msg, err := h.decoder.FromBytes(ev.Value)
 		if err != nil {
 			logger.Errorf("Decoding Message failed: %v", ev.TopicPartition)
 		}
@@ -56,12 +58,18 @@ func (h *Handler) handleKafkaMessage(ev *kafka.Message) {
 
 }
 
-func NewHandler(events <-chan kafka.Event, wg *sync.WaitGroup, msgStore store.MsgStore, librdTags reporter.LibrdTags, librdStatsEnabled bool) *Handler {
+func NewHandler(events <-chan kafka.Event,
+	wg *sync.WaitGroup,
+	msgStore store.MsgStore,
+	decoder serde.Decoder,
+	librdTags reporter.LibrdTags,
+	librdStatsEnabled bool) *Handler {
 	return &Handler{
 		events:            events,
 		wg:                wg,
 		msgStore:          msgStore,
 		librdStatsHandler: reporter.NewlibrdKafkaStat(librdTags),
 		librdStatsEnabled: librdStatsEnabled,
+		decoder:           decoder,
 	}
 }

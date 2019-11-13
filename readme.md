@@ -57,6 +57,17 @@ message {
 CONSUMER_ENABLED="true"
 PRODUCER_ENABLED="false"
 ```
+
+* If you want to consume message produce in proto format from non kafqa producer
+* The latency will be measured from the consumed time to the timestamp given in the proto. 
+
+```
+export PROTO_PARSER_ENABLED="true"
+export PROTO_PARSER_MESSAGE_NAME="com.test.user.UserLocationLogMessage"
+export PROTO_PARSER_FILE_PATH=/proto/test.proto
+export PROTO_PARSER_TIMESTAMP_INDEX=3
+```
+
 * Requires `redis` store to track and ack messages
 ```
 STORE_TYPE="redis"

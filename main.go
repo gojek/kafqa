@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gojekfarm/kafqa/reporter/metrics"
+	"github.com/gojekfarm/kafqa/serde"
 
 	"github.com/gojekfarm/kafqa/callback"
 	"github.com/gojekfarm/kafqa/config"
@@ -85,14 +86,14 @@ func (app *application) Wait() {
 	app.consumerWg.Wait()
 }
 
-func getProducer(cfg config.Producer) (*producer.Producer, error) {
+func getProducer(cfg config.Producer, parser serde.Parser) (*producer.Producer, error) {
 	if !cfg.Enabled {
 		logger.Infof("Producer is not enabled")
 		return nil, nil
 	}
 	var err error
-	kafkaProducer, err := producer.New(cfg, creator.New(),
-		producer.Register(callback.MessageSent),
+	kafkaProducer, err := producer.New(cfg, creator.New(), parser,
+		producer.Register(callback.Reporter(parser)),
 		producer.Register(func(msg *kafka.Message) { time.Sleep(200) }),
 	)
 	if err != nil {
@@ -101,20 +102,20 @@ func getProducer(cfg config.Producer) (*producer.Producer, error) {
 	return kafkaProducer, nil
 }
 
-func getConsumer(appCfg config.Application, ms store.MsgStore, wg *sync.WaitGroup) (*consumer.Consumer, error) {
+func getConsumer(appCfg config.Application, ms store.MsgStore, wg *sync.WaitGroup, parser serde.Decoder) (*consumer.Consumer, error) {
 	if !appCfg.Consumer.Enabled {
 		logger.Infof("Consumer is not enabled")
 		return nil, nil
 	}
 	kafkaConsumer, err := consumer.New(appCfg.Consumer,
-		consumer.Register(callback.Acker(ms)),
-		consumer.Register(callback.LatencyTracker),
+		consumer.Register(callback.Acker(ms, parser)),
+		consumer.Register(callback.LatencyTracker(parser)),
 		consumer.WaitGroup(wg))
 	if err != nil {
 		return nil, fmt.Errorf("error creating consumer: %v", err)
 	}
 	if appCfg.DevEnvironment() {
-		kafkaConsumer.Register(callback.Display)
+		kafkaConsumer.Register(callback.Display(parser))
 	}
 	return kafkaConsumer, nil
 }
@@ -127,9 +128,11 @@ func setup(appCfg config.Application) (*application, error) {
 		logger.Errorf("Error initializing tracer: %v", err)
 	}
 
+	parser := serde.New(appCfg.ProtoParser)
+
 	var wg sync.WaitGroup
 
-	kafkaProducer, err := getProducer(appCfg.Producer)
+	kafkaProducer, err := getProducer(appCfg.Producer, parser)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +143,7 @@ func setup(appCfg config.Application) (*application, error) {
 		return nil, err
 	}
 	var consWg sync.WaitGroup
-	kafkaConsumer, err := getConsumer(appCfg, ms, &consWg)
+	kafkaConsumer, err := getConsumer(appCfg, ms, &consWg, parser)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +172,7 @@ func setup(appCfg config.Application) (*application, error) {
 		librdTags := reporter.LibrdTags{ClusterName: appCfg.Producer.ClusterName,
 			Ack:   strconv.Itoa(appCfg.Librdconfigs.RequestRequiredAcks),
 			Topic: appCfg.Producer.Topic}
-		app.Handler = producer.NewHandler(kafkaProducer.Events(), &wg, ms, librdTags, appCfg.Librdconfigs.Enabled)
+		app.Handler = producer.NewHandler(kafkaProducer.Events(), &wg, ms, parser, librdTags, appCfg.Librdconfigs.Enabled)
 	}
 	go app.registerSignalHandler()
 	return app, nil

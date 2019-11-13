@@ -1,4 +1,4 @@
-package creator_test
+package serde
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 func TestBytesShouldSerializeInGobEncoding(t *testing.T) {
 	var messageBuffer bytes.Buffer
 	message := creator.Message{Sequence: uint64(1010)}
-	messageBytes, _ := message.Bytes()
+	messageBytes, _ := KafqaParser{}.Bytes(message)
 	messageBuffer.Write(messageBytes)
 	decoder := gob.NewDecoder(&messageBuffer)
 	var decodedMessage creator.Message
@@ -23,8 +23,8 @@ func TestBytesShouldSerializeInGobEncoding(t *testing.T) {
 
 func TestBytesShouldDeSerializeInGobEncoding(t *testing.T) {
 	message := creator.Message{Sequence: uint64(1011)}
-	mBytes, _ := message.Bytes()
-	deserializedMessage, err := creator.FromBytes(mBytes)
+	mBytes, _ := KafqaParser{}.Bytes(message)
+	deserializedMessage, err := KafqaParser{}.FromBytes(mBytes)
 	assert.NoError(t, err)
 	assert.Equal(t, message, deserializedMessage)
 }

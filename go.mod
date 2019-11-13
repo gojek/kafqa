@@ -9,9 +9,13 @@ require (
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/corpix/uarand v0.1.0 // indirect
 	github.com/go-redis/redis v6.15.2+incompatible
+	github.com/gogo/protobuf v1.1.1
+	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
+	github.com/golang/protobuf v1.3.1
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/icrowley/fake v0.0.0-20180203215853-4178557ae428
+	github.com/jhump/protoreflect v1.5.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect

@@ -15,6 +15,7 @@ type Application struct {
 	Store
 	LibrdConfigs
 	Jaeger
+	ProtoParser
 }
 
 type Config struct {
@@ -97,6 +98,13 @@ type Jaeger struct {
 	ReporterLogSpans bool    `split_words:"true" default:"false"`
 	SamplerType      string  `split_words:"true" default:"const"`
 	SamplerParam     float64 `split_words:"true" default:"1"`
+}
+
+type ProtoParser struct {
+	Enabled        bool   `default:"false"`
+	FilePath       string `split_words:"true"`
+	MessageName    string `split_words:"true"`
+	TimestampIndex int    `split_words:"true"`
 }
 
 func (p Prometheus) BindPort() string {
