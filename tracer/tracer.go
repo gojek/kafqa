@@ -43,7 +43,8 @@ func getConfig(cfg config.Jaeger) jgrcfg.Configuration {
 		},
 		Reporter: &jgrcfg.ReporterConfig{
 			LogSpans:            cfg.ReporterLogSpans,
-			BufferFlushInterval: time.Millisecond * 500,
+			BufferFlushInterval: time.Millisecond * 50,
+			LocalAgentHostPort:  cfg.AgentHostPort(),
 			//CollectorEndpoint:   "http://localhost:14268/api/traces",
 		},
 		Disabled:    cfg.Disabled,

@@ -98,6 +98,8 @@ type Jaeger struct {
 	ReporterLogSpans bool    `split_words:"true" default:"false"`
 	SamplerType      string  `split_words:"true" default:"const"`
 	SamplerParam     float64 `split_words:"true" default:"1"`
+	AgentPort        int     `split_words:"true" default:"6831"`
+	AgentHost        string  `split_words:"true" default:"localhost"`
 }
 
 type ProtoParser struct {
@@ -168,4 +170,8 @@ func (c Consumer) KafkaConfig() *kafka.ConfigMap {
 
 func (c Consumer) PollTimeout() time.Duration {
 	return time.Duration(c.PollTimeoutMs) * time.Millisecond
+}
+
+func (j Jaeger) AgentHostPort() string {
+	return fmt.Sprintf("%s:%d", j.AgentHost, j.AgentPort)
 }

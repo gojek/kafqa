@@ -94,10 +94,10 @@ func (p Producer) ProduceWorker(ctx context.Context) {
 	for {
 		select {
 		case msg, ok := <-p.messages:
-			span := opentracing.StartSpan("kafqa.produce.worker")
 			if !ok {
 				return
 			}
+			span := tracer.StartSpan("kafqa.produce.worker")
 			p.produceMessage(opentracing.ContextWithSpan(ctx, span), msg)
 			span.Finish()
 			time.Sleep(time.Millisecond * time.Duration(p.config.WorkerDelayMs))
