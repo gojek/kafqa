@@ -15,6 +15,7 @@ import (
 var (
 	tags = []string{"topic", "pod_name", "deployment", "kafka_cluster", "ack"}
 
+	//TODO: could add to []metrics in prom{} so we can register all
 	messagesSent = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "kafqa_messages",
 		Name:      "sent",
@@ -43,6 +44,20 @@ var (
 	}, tags)
 	producerChannelCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "kafqa_producer_channel",
+		Name:      "messages_queued",
+	}, tags)
+	consumerMessageProcessingTime = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+		Namespace:  "kafqa_latency_ms",
+		Name:       "consumer_message_processing",
+		Objectives: map[float64]float64{0.9: 0.01, 0.99: 0.001},
+	}, tags)
+	consumerMessageReadTime = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+		Namespace:  "kafqa_latency_ms",
+		Name:       "consumer_message_read",
+		Objectives: map[float64]float64{0.9: 0.01, 0.99: 0.001},
+	}, tags)
+	consumerProcessingChannelLength = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "kafqa_consumer_channel",
 		Name:      "messages_queued",
 	}, tags)
 )
@@ -85,6 +100,22 @@ func ConsumerLatency(dur time.Duration) {
 	}
 }
 
+func ConsumerMessageProcessingTime(dur time.Duration) {
+	if prom.enabled {
+		ms := dur / time.Millisecond
+		consumerMessageProcessingTime.WithLabelValues(promtags.topic, promtags.podName, promtags.deployment,
+			promtags.kafkaCluster, promtags.ack).Observe(float64(ms))
+	}
+}
+
+func ConsumerMessageReadTime(dur time.Duration) {
+	if prom.enabled {
+		ms := dur / time.Millisecond
+		consumerMessageReadTime.WithLabelValues(promtags.topic, promtags.podName, promtags.deployment,
+			promtags.kafkaCluster, promtags.ack).Observe(float64(ms))
+	}
+}
+
 func ProduceLatency(dur time.Duration) {
 	if prom.enabled {
 		ms := dur / time.Millisecond
@@ -114,6 +145,13 @@ func ProducerChannelLength(count int) {
 	}
 }
 
+func ConsumerChannelLength(count int) {
+	if prom.enabled {
+		consumerProcessingChannelLength.WithLabelValues(promtags.topic, promtags.podName, promtags.deployment,
+			promtags.kafkaCluster, promtags.ack).Add(float64(count))
+	}
+}
+
 func Setup(cfg config.Prometheus, producerCfg config.Producer) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -133,6 +171,9 @@ func Setup(cfg config.Prometheus, producerCfg config.Producer) {
 		prometheus.MustRegister(producerCount)
 		prometheus.MustRegister(consumerCount)
 		prometheus.MustRegister(producerChannelCount)
+		prometheus.MustRegister(consumerMessageProcessingTime)
+		prometheus.MustRegister(consumerMessageReadTime)
+		prometheus.MustRegister(consumerProcessingChannelLength)
 
 		mux := http.NewServeMux()
 		mux.Handle("/metrics", promhttp.Handler())

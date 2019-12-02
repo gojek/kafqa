@@ -59,6 +59,7 @@ type Consumer struct {
 	PollTimeoutMs    int64  `split_words:"true" default:"500"`
 	SecurityProtocol string `split_words:"true" default:"PLAINTEXT"`
 	EnableAutoCommit bool   `split_words:"true" default:"true"`
+	WorkerDelayMs    int    `split_words:"true" default:"5"`
 	ssl              SSL
 	LibrdConfigs     LibrdConfigs
 }
@@ -170,6 +171,10 @@ func (c Consumer) KafkaConfig() *kafka.ConfigMap {
 
 func (c Consumer) PollTimeout() time.Duration {
 	return time.Duration(c.PollTimeoutMs) * time.Millisecond
+}
+
+func (c Consumer) MessageLoopDelay() time.Duration {
+	return time.Duration(c.WorkerDelayMs) * time.Millisecond
 }
 
 func (j Jaeger) AgentHostPort() string {
