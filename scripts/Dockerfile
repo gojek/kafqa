@@ -1,5 +1,6 @@
 FROM golang:latest
 
+ARG GIT_COMMIT
 RUN apt-get update -y
 WORKDIR /usr/src
 RUN wget https://github.com/edenhill/librdkafka/archive/v1.1.0.tar.gz -O librdkafka.tar.gz

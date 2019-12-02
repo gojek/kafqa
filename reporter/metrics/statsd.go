@@ -65,7 +65,7 @@ func Incr(metric string, tags []string) {
 	}
 }
 
-func ReportTime(startTime time.Time, tags []string, metricName string, rate float64) {
+func ReportTime(startTime time.Time, tags []string, metricName string) {
 	elapsed := time.Since(startTime)
 	if err := metricsreporter.Timing(metricName, elapsed, tags, rate); err != nil {
 		log.Printf("Metrics Timing Error: %v - %v", err, metricName)

@@ -52,8 +52,8 @@ func (p Producer) Run(ctx context.Context) {
 		defer p.wg.Done()
 		defer close(p.messages)
 
-		span := tracer.StartSpan("kafqa.produce.channel")
 		for i = 0; p.config.TotalMessages == -1 || i < p.config.TotalMessages; i++ {
+			span := tracer.StartSpan("kafqa.produce.channel")
 			select {
 			case <-ctx.Done():
 				span.Finish()
@@ -62,8 +62,8 @@ func (p Producer) Run(ctx context.Context) {
 				msg := p.msgCreator.NewMessageWithFakeData()
 				p.messages <- msg
 			}
+			span.Finish()
 		}
-		span.Finish()
 	}()
 }
 

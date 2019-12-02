@@ -49,9 +49,12 @@ func (c *Consumer) processor(messages <-chan *kafka.Message, id int) {
 	defer c.wg.Done()
 	logger.Debugf("[processor-%d] processing messages...", id)
 	for msg := range messages {
+		start := time.Now()
 		for _, cb := range c.callbacks {
 			cb(msg)
 		}
+		metrics.ConsumerMessageReadTime(time.Since(start))
+		metrics.ConsumerChannelLength(len(messages))
 	}
 	logger.Debugf("[processor-%d] completed.", id)
 }
@@ -64,6 +67,7 @@ func (c *Consumer) consumerWorker(ctx context.Context, cons consumer, id int) <-
 		defer func() { close(messages) }()
 
 		for {
+			start := time.Now()
 			c.readMessage(cons, messages, id)
 			select {
 			case <-ctx.Done():
@@ -73,8 +77,9 @@ func (c *Consumer) consumerWorker(ctx context.Context, cons consumer, id int) <-
 				return
 			default:
 				// This is required to preempt goroutine
-				time.Sleep(10 * time.Millisecond)
+				time.Sleep(c.config.MessageLoopDelay())
 			}
+			metrics.ConsumerMessageReadTime(time.Since(start))
 		}
 	}(messages)
 
