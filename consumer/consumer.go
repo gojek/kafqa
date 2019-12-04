@@ -22,6 +22,7 @@ type Consumer struct {
 	wg        *sync.WaitGroup
 	callbacks []callback.Callback
 	exit      chan struct{}
+	cbwg      *sync.WaitGroup
 }
 
 type consumer interface {
@@ -50,10 +51,14 @@ func (c *Consumer) processor(messages <-chan *kafka.Message, id int) {
 	logger.Debugf("[processor-%d] processing messages...", id)
 	for msg := range messages {
 		start := time.Now()
+		c.cbwg.Add(len(c.callbacks))
 		for _, cb := range c.callbacks {
-			cb(msg)
+			go func(cb callback.Callback, m *kafka.Message) {
+				cb(m)
+				c.cbwg.Done()
+			}(cb, msg)
 		}
-		metrics.ConsumerMessageReadTime(time.Since(start))
+		metrics.ConsumerMessageProcessingTime(time.Since(start))
 		metrics.ConsumerChannelLength(len(messages))
 	}
 	logger.Debugf("[processor-%d] completed.", id)
@@ -113,6 +118,7 @@ func (c *Consumer) Close() {
 	logger.Infof("closing consumer...")
 	c.exit <- struct{}{}
 	c.wg.Wait()
+	c.cbwg.Wait()
 	for _, cons := range c.consumers {
 		cons.Close()
 	}
@@ -149,6 +155,7 @@ func New(cfg config.Consumer, opts ...Option) (*Consumer, error) {
 		consumers: consumers,
 		config:    cfg,
 		exit:      make(chan struct{}, 1),
+		cbwg:      &sync.WaitGroup{},
 	}
 	for _, opt := range opts {
 		opt(cons)

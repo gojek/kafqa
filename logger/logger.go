@@ -1,6 +1,8 @@
 package logger
 
-import "go.uber.org/zap"
+import (
+	"go.uber.org/zap"
+)
 
 var log *zap.SugaredLogger
 
@@ -26,6 +28,8 @@ func Setup(level string) {
 	switch level {
 	case "debug":
 		zlog, _ = zap.NewDevelopment()
+	case "none":
+		zlog = zap.NewNop()
 	default:
 		zlog, _ = zap.NewProduction()
 	}

@@ -34,6 +34,7 @@ func (s *ConsumerSuite) SetupTest() {
 		config:    config.Consumer{Concurrency: 1},
 		consumers: consumers,
 		wg:        &sync.WaitGroup{},
+		cbwg:      &sync.WaitGroup{},
 		exit:      make(chan struct{}, 1),
 	}
 }

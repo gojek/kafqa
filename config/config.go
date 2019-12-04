@@ -59,7 +59,7 @@ type Consumer struct {
 	PollTimeoutMs    int64  `split_words:"true" default:"500"`
 	SecurityProtocol string `split_words:"true" default:"PLAINTEXT"`
 	EnableAutoCommit bool   `split_words:"true" default:"true"`
-	WorkerDelayMs    int    `split_words:"true" default:"5"`
+	WorkerDelayMs    int    `split_words:"true" default:"0"`
 	ssl              SSL
 	LibrdConfigs     LibrdConfigs
 }
