@@ -3,6 +3,7 @@ package producer
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -27,7 +28,7 @@ type ProducerSuite struct {
 }
 
 func (s *ProducerSuite) SetupTest() {
-	logger.Setup("")
+	logger.Setup("none")
 
 	s.kafkaProducer = new(kafkaProducerMock)
 	s.creator = new(msgCreatorMock)
@@ -101,10 +102,10 @@ func (s *ProducerSuite) TestIfAllMessagesAreProduced() {
 
 func (s *ProducerSuite) TestIfMessagesAreProducedInfinitely() {
 	t := s.T()
-	msg := make(chan struct{}, 1000)
 	var events chan kafka.Event
+	msgs := int32(0)
 	callback := func(message *kafka.Message) {
-		msg <- struct{}{}
+		atomic.AddInt32(&msgs, int32(1))
 	}
 	prodCh := make(chan *kafka.Message)
 	s.encoder = serde.KafqaParser{}
@@ -123,8 +124,9 @@ func (s *ProducerSuite) TestIfMessagesAreProducedInfinitely() {
 	defer cancel()
 	s.kp.Run(ctx)
 
+	time.AfterFunc(time.Second*5, func() { s.T().Fatalf("Producer didn't complete within expected time") })
 	s.kp.Close()
-	assert.GreaterOrEqual(t, len(s.kafkaProducer.Calls), 1)
+	assert.GreaterOrEqual(t, int32(len(s.kafkaProducer.Calls)), msgs)
 	s.kafkaProducer.AssertExpectations(t)
 	s.creator.AssertExpectations(t)
 }
