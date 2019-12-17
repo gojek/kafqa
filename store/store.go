@@ -75,6 +75,7 @@ func NewInMemory(ti TraceID) *InMemory {
 	}
 }
 
+
 func New(cfg config.Store, traceID TraceID) (MsgStore, error) {
 	if cfg.Type == "redis" {
 		ms, err := NewRedis(cfg.RedisHost, cfg.RunID, traceID)
@@ -82,6 +83,8 @@ func New(cfg config.Store, traceID TraceID) (MsgStore, error) {
 			return nil, err
 		}
 		return ms, nil
+	} else if cfg.Type == "noop" {
+		return NewNoOp(), nil
 	}
 	return NewInMemory(traceID), nil
 }

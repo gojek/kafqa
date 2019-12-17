@@ -87,6 +87,13 @@ type Statsd struct {
 	Tags       []string
 }
 
+type PProf struct {
+	Enabled    bool   `default:"false"`
+	Port       int    `default:"9998"`
+	PodName    string `envconfig:"POD_NAME"`
+	Deployment string `envconfig:"DEPLOYMENT"`
+}
+
 type Store struct {
 	Type      string `default:"memory"`
 	RunID     string `split_words:"true"`
@@ -117,6 +124,7 @@ func (p Prometheus) BindPort() string {
 type Reporter struct {
 	Prometheus
 	Statsd
+	PProf
 }
 
 func App() Application {
