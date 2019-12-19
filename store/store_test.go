@@ -3,6 +3,7 @@ package store_test
 import (
 	"testing"
 
+	"github.com/gojekfarm/kafqa/config"
 	"github.com/gojekfarm/kafqa/creator"
 	"github.com/gojekfarm/kafqa/store"
 	"github.com/stretchr/testify/assert"
@@ -74,6 +75,26 @@ func (s *InmemorySuite) TestShouldRemoveAcknowledgedMessages() {
 	}
 }
 
-func TestInMemoryStore(t *testing.T) {
-	suite.Run(t, new(InmemorySuite))
+func TestShouldCheckIfInMemoryStoreIsReturned(t *testing.T) {
+	appConfig := config.Application{Producer: config.Producer{TotalMessages: 100, Enabled: true}, Consumer: config.Consumer{Enabled: true}}
+	traceID := func(t store.Trace) string { return t.Message.ID }
+
+	newStore, err := store.New(appConfig, traceID)
+	storeType, ok := newStore.(*store.InMemory)
+
+	assert.True(t, ok)
+	require.NoError(t, err)
+	require.NotEmptyf(t, storeType, "")
+}
+
+func TestShouldCheckIfNoOpStoreIsReturned(t *testing.T) {
+	appConfig := config.Application{Producer: config.Producer{TotalMessages: -1, Enabled: true}}
+	traceID := func(t store.Trace) string { return t.Message.ID }
+
+	newStore, err := store.New(appConfig, traceID)
+	storeType, ok := newStore.(store.NoOp)
+
+	assert.True(t, ok)
+	require.NoError(t, err)
+	require.Empty(t, storeType, "")
 }

@@ -26,6 +26,7 @@ func Load() error {
 		"STATSD":       &application.Reporter.Statsd,
 		"JAEGER":       &application.Jaeger,
 		"PROTO_PARSER": &application.ProtoParser,
+		"PPROF":        &application.Reporter.PProf,
 	}
 	if err := loadConfigs(configs); err != nil {
 		return err

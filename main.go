@@ -138,7 +138,7 @@ func setup(appCfg config.Application) (*application, error) {
 	}
 
 	traceID := func(t store.Trace) string { return t.Message.ID }
-	ms, err := store.New(appCfg.Store, traceID)
+	ms, err := store.New(appCfg, traceID)
 	if err != nil {
 		return nil, err
 	}

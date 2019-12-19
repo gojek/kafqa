@@ -75,13 +75,16 @@ func NewInMemory(ti TraceID) *InMemory {
 	}
 }
 
-func New(cfg config.Store, traceID TraceID) (MsgStore, error) {
-	if cfg.Type == "redis" {
-		ms, err := NewRedis(cfg.RedisHost, cfg.RunID, traceID)
+func New(appCfg config.Application, traceID TraceID) (MsgStore, error) {
+	if appCfg.Store.Type == "redis" {
+		ms, err := NewRedis(appCfg.Store.RedisHost, appCfg.Store.RunID, traceID)
 		if err != nil {
 			return nil, err
 		}
 		return ms, nil
+	} else if appCfg.Producer.TotalMessages != -1 && appCfg.Producer.Enabled && appCfg.Consumer.Enabled {
+		// only enable in-memory calculation, when the infinite producer is not set and both producer and consumer is enabled.
+		return NewInMemory(traceID), nil
 	}
-	return NewInMemory(traceID), nil
+	return NewNoOp(), nil
 }
