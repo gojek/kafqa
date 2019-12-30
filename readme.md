@@ -130,5 +130,7 @@ helm install gojektech-incubator/kafqa --name kafqa-producer-001 --values=kafqa-
 * Follow go [guidelines](https://golang.org/doc/effective_go.html) for development
 * Ensure `make` succeeds
 
+Thanks for all the [Contributors](https://github.com/gojekfarm/kafqa/graphs/contributors).
+
 ## License
 Licensed under the [Apache License](./LICENSE), Version 2.0

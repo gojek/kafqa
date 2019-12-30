@@ -3,6 +3,7 @@ package consumer
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -42,9 +43,9 @@ func (s *ConsumerSuite) SetupTest() {
 func (s *ConsumerSuite) TestIfCallbackCalled() {
 	t := s.T()
 	ch := make(chan struct{}, 1)
-	var callbackCalled bool
+	var callbackCalled int32
 	call := func(msg *kafka.Message) {
-		callbackCalled = true
+		atomic.AddInt32(&callbackCalled, int32(1))
 		ch <- struct{}{}
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5000*time.Millisecond)
@@ -55,7 +56,7 @@ func (s *ConsumerSuite) TestIfCallbackCalled() {
 	cancel()
 	s.consumer.Close()
 
-	assert.True(t, callbackCalled, "Callback called! Message received")
+	assert.GreaterOrEqual(t, callbackCalled, int32(1), "Callback called! Message received")
 }
 
 func TestConsumer(t *testing.T) {
