@@ -1,16 +1,44 @@
 # KAFQA
 [![Build Status](https://travis-ci.org/gojekfarm/kafqa.svg?branch=master)](https://travis-ci.org/gojekfarm/kafqa)
 [![codecov](https://codecov.io/gh/gojekfarm/kafqa/branch/master/graph/badge.svg)](https://codecov.io/gh/gojekfarm/kafqa)
+
 Kafka quality analyser, measuring data loss, ops, latency
 
-### Running
+### Features
+* You can run as producer and consumer to verify kafka cluster doesn't have issues
+* You can run as producer and consumer separately to another kafka cluster where data is being mirrored and verify latency
+* Easy to increase throughput as it affects latency of cluster
+* Consume an existing topic from kafka cluster and measure latency
+* Live metrics for latencies, ack, throughput and easy to setup alerts on latency threshold breach
+* Deployable with helm chart, scalable with kubernetes
+
+### Getting Started
+These instruction will help you run kafqa locally against a kafka cluster
+
+#### Prerequisites
+* running kafka cluster
+* Go >= version 1.12
+
+#### Steps
 * ensure go modules is enabled GO111MODULES=on if part of GOPATH and having old go version.
 * ensure kafka broker mentioned in config is up.
 
 ```
 source kafkqa.env && go build && ./kafkqa
 ```
-* run `make` to run tests and linting
+#### Running tests
+
+* run `make` to run tests including linting
+
+### Dashboard
+prometheus metrics can be viewed in grafana by importing the dashboard in `scripts/dasbhoard`
+
+The screenshot below shows setup for multiple cluster being tracked and we've alerts on that. 90,50 percentile could be added if required.
+
+* First pane have `99 %le` e2e latency from produce till consume of a kafka message
+* Second pane shows the throughput
+
+![Kafqa Aggregated Dashboard](./scripts/dashboard/kafqa_cluster_aggregated.png)
 
 ### Report
 
@@ -32,9 +60,7 @@ Tool generates report which contains the following information.
 | 3 | App Run Time                   | 8.801455502s |
 +---+--------------------------------+--------------+
 ```
-
-### Dashboard
-prometheus metrics can be viewed in grafana by importing the dashboard in `scripts/dasbhoard`
+This is a static report which helps do quick test. We also have metrics being published runtime, where we've our alerts/dashboards configured on multiple cluster.
 
 ### Data
 
@@ -87,28 +113,22 @@ CONSUMER_KEY_LOCATION="/certs/client/client.key" # private key
 
 ### Disable consumer Auto commit
 if consumer is restarted, some messages could be not tracked, as it's committed before processing.
-To disable and commit after processing the messages (This increases the run time though) set `CONSUMER_ENABLE_AUTO_COMMIT="false"
+To disable and commit after processing the messages (This increases the run time though) set `CONSUMER_ENABLE_AUTO_COMMIT="false"`
 
 Configuration of application is customisable with `kafkq.env` eg: tweak the concurrency of producers/consumers.
 
-### Todo
-* [ ] Compute now - kafka timestamp and report it
-* [ ] Generate Random consumer group and topic id (for development)
-* [ ] Add more metrics on messages which're lost (ID/Sequence/Duplicates)
-* [ ] Producer to handle high throughput (queue full issue)
-* [ ] measure % of data loss, average of latency
 
+### Deployment
 
-### Done:
-* [X] convert fmt to log
-* [X] Add timestamp to kafka message
-* [X] Makefile
-* [X] Compute lag (receive t - produce t)
-* [X] Consumer
-    * [X] listen to interrupt and kill consumer or stop with timeout
-* [X] Add store to keep track of messages (producer) [interface]
-* [X] Ack in store to for received messages (consumer)
-* [X] Generate produce & consume basic report
-* [X] Prometheus exporter for metrics
-* [X] CI (vet/lint/golangci) (travis)
-* [X] Capture throughput metrics
+You can install kafqa on kubernetes with [helm chart](https://github.com/gojektech/charts/tree/master/incubator/kafqa) with [sample values](https://github.com/gojektech/charts/blob/master/incubator/kafqa/values.yaml) file
+```
+helm install gojektech-incubator/kafqa --name kafqa-producer-001 --values=kafqa-producer.yaml
+```
+
+## Contributing
+* Raise an issue to clarify scope/questions, followed by PR
+* Follow go [guidelines](https://golang.org/doc/effective_go.html) for development
+* Ensure `make` succeeds
+
+## License
+Licensed under the [Apache License](./LICENSE), Version 2.0
