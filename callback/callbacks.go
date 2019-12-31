@@ -3,12 +3,12 @@ package callback
 import (
 	"time"
 
-	"github.com/gojekfarm/kafqa/serde"
+	"github.com/gojek/kafqa/serde"
 
-	"github.com/gojekfarm/kafqa/logger"
-	"github.com/gojekfarm/kafqa/reporter"
-	"github.com/gojekfarm/kafqa/reporter/metrics"
-	"github.com/gojekfarm/kafqa/store"
+	"github.com/gojek/kafqa/logger"
+	"github.com/gojek/kafqa/reporter"
+	"github.com/gojek/kafqa/reporter/metrics"
+	"github.com/gojek/kafqa/store"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 

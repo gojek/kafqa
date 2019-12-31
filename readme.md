@@ -1,6 +1,6 @@
 # KAFQA
-[![Build Status](https://travis-ci.org/gojekfarm/kafqa.svg?branch=master)](https://travis-ci.org/gojekfarm/kafqa)
-[![codecov](https://codecov.io/gh/gojekfarm/kafqa/branch/master/graph/badge.svg)](https://codecov.io/gh/gojekfarm/kafqa)
+[![Build Status](https://travis-ci.org/gojek/kafqa.svg?branch=master)](https://travis-ci.org/gojek/kafqa)
+[![codecov](https://codecov.io/gh/gojek/kafqa/branch/master/graph/badge.svg)](https://codecov.io/gh/gojek/kafqa)
 
 Kafka quality analyser, measuring data loss, ops, latency
 
@@ -130,7 +130,7 @@ helm install gojektech-incubator/kafqa --name kafqa-producer-001 --values=kafqa-
 * Follow go [guidelines](https://golang.org/doc/effective_go.html) for development
 * Ensure `make` succeeds
 
-Thanks for all the [Contributors](https://github.com/gojekfarm/kafqa/graphs/contributors).
+Thanks for all the [Contributors](https://github.com/gojek/kafqa/graphs/contributors).
 
 ## License
 Licensed under the [Apache License](./LICENSE), Version 2.0

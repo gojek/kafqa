@@ -6,12 +6,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gojekfarm/kafqa/reporter/metrics"
+	"github.com/gojek/kafqa/reporter/metrics"
 
-	"github.com/gojekfarm/kafqa/callback"
-	"github.com/gojekfarm/kafqa/config"
-	"github.com/gojekfarm/kafqa/logger"
-	"github.com/gojekfarm/kafqa/tracer"
+	"github.com/gojek/kafqa/callback"
+	"github.com/gojek/kafqa/config"
+	"github.com/gojek/kafqa/logger"
+	"github.com/gojek/kafqa/tracer"
 
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )

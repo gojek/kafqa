@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gojekfarm/kafqa/config"
-	"github.com/gojekfarm/kafqa/reporter/metrics"
-	"github.com/gojekfarm/kafqa/store"
+	"github.com/gojek/kafqa/config"
+	"github.com/gojek/kafqa/reporter/metrics"
+	"github.com/gojek/kafqa/store"
 )
 
 type storeReporter interface {

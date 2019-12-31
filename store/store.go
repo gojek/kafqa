@@ -3,8 +3,8 @@ package store
 import (
 	"sync"
 
-	"github.com/gojekfarm/kafqa/config"
-	"github.com/gojekfarm/kafqa/creator"
+	"github.com/gojek/kafqa/config"
+	"github.com/gojek/kafqa/creator"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 

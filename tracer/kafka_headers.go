@@ -3,7 +3,7 @@ package tracer
 import (
 	"context"
 
-	"github.com/gojekfarm/kafqa/logger"
+	"github.com/gojek/kafqa/logger"
 	"github.com/opentracing/opentracing-go"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )

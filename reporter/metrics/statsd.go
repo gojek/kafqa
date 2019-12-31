@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gojekfarm/kafqa/logger"
+	"github.com/gojek/kafqa/logger"
 
-	"github.com/gojekfarm/kafqa/config"
+	"github.com/gojek/kafqa/config"
 
 	"github.com/DataDog/datadog-go/statsd"
 )

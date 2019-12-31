@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gojekfarm/kafqa/config"
-	"github.com/gojekfarm/kafqa/logger"
+	"github.com/gojek/kafqa/config"
+	"github.com/gojek/kafqa/logger"
 	"github.com/icrowley/fake"
 	"github.com/stretchr/testify/mock"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"

@@ -5,12 +5,12 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/gojekfarm/kafqa/logger"
-	"github.com/gojekfarm/kafqa/serde"
+	"github.com/gojek/kafqa/logger"
+	"github.com/gojek/kafqa/serde"
 
-	"github.com/gojekfarm/kafqa/config"
-	"github.com/gojekfarm/kafqa/creator"
-	"github.com/gojekfarm/kafqa/store"
+	"github.com/gojek/kafqa/config"
+	"github.com/gojek/kafqa/creator"
+	"github.com/gojek/kafqa/store"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"

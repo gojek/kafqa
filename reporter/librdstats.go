@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/gojekfarm/kafqa/logger"
+	"github.com/gojek/kafqa/logger"
 
-	"github.com/gojekfarm/kafqa/reporter/metrics"
+	"github.com/gojek/kafqa/reporter/metrics"
 	"github.com/savaki/jq"
 )
 

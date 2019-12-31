@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gojekfarm/kafqa/logger"
+	"github.com/gojek/kafqa/logger"
 
-	"github.com/gojekfarm/kafqa/config"
+	"github.com/gojek/kafqa/config"
 	"github.com/stretchr/testify/assert"
 )
 

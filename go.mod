@@ -1,4 +1,4 @@
-module github.com/gojekfarm/kafqa
+module github.com/gojek/kafqa
 
 go 1.12
 

@@ -5,17 +5,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gojekfarm/kafqa/serde"
+	"github.com/gojek/kafqa/serde"
 
-	"github.com/gojekfarm/kafqa/creator"
-	"github.com/gojekfarm/kafqa/tracer"
+	"github.com/gojek/kafqa/creator"
+	"github.com/gojek/kafqa/tracer"
 	"github.com/opentracing/opentracing-go"
 
-	"github.com/gojekfarm/kafqa/reporter/metrics"
+	"github.com/gojek/kafqa/reporter/metrics"
 
-	"github.com/gojekfarm/kafqa/callback"
-	"github.com/gojekfarm/kafqa/config"
-	"github.com/gojekfarm/kafqa/logger"
+	"github.com/gojek/kafqa/callback"
+	"github.com/gojek/kafqa/config"
+	"github.com/gojek/kafqa/logger"
 	"gopkg.in/confluentinc/confluent-kafka-go.v1/kafka"
 )
 

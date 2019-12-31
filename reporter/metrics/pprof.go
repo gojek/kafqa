@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"net/http/pprof"
 
-	"github.com/gojekfarm/kafqa/config"
-	"github.com/gojekfarm/kafqa/logger"
+	"github.com/gojek/kafqa/config"
+	"github.com/gojek/kafqa/logger"
 )
 
 func SetupPProf(cfg config.PProf) {
