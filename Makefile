@@ -1,4 +1,4 @@
-all: clean check-quality build test golangci
+all: clean check-quality build testv golangci
 
 APP=kafkq
 ALL_PACKAGES=$(shell go list ./...)
@@ -23,7 +23,7 @@ build:
 	@go build -o out/kafqa
 
 testv:
-	go test -race -v ./...
+	GOMAXPROCS=1 go test -race -v ./...
 
 test:
 	go test -race ./...

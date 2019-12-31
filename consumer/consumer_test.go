@@ -45,8 +45,10 @@ func (s *ConsumerSuite) TestIfCallbackCalled() {
 	ch := make(chan struct{}, 1)
 	var callbackCalled int32
 	call := func(msg *kafka.Message) {
-		atomic.AddInt32(&callbackCalled, int32(1))
-		ch <- struct{}{}
+		go func() {
+			atomic.AddInt32(&callbackCalled, int32(1))
+			ch <- struct{}{}
+		}()
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5000*time.Millisecond)
 	opt := Register(call)
@@ -56,7 +58,7 @@ func (s *ConsumerSuite) TestIfCallbackCalled() {
 	cancel()
 	s.consumer.Close()
 
-	assert.GreaterOrEqual(t, callbackCalled, int32(1), "Callback called! Message received")
+	assert.GreaterOrEqual(t, atomic.LoadInt32(&callbackCalled), int32(1), "Callback called! Message received")
 }
 
 func TestConsumer(t *testing.T) {
