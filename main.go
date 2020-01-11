@@ -184,16 +184,12 @@ func (app *application) registerSignalHandler() {
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, syscall.SIGINT, syscall.SIGTERM)
 	app.WaitGroup.Add(1)
-	for {
-		select {
-		case <-app.ctx.Done():
-			logger.Debugf("context done, closing application")
-			app.Close()
-			return
-		case <-exit:
-			logger.Debugf("Received interrupt, closing application")
-			app.Close()
-			return
-		}
+	select {
+	case <-app.ctx.Done():
+		logger.Debugf("context done, closing application")
+		app.Close()
+	case <-exit:
+		logger.Debugf("Received interrupt, closing application")
+		app.Close()
 	}
 }
