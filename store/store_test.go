@@ -1,8 +1,10 @@
 package store_test
 
 import (
+	"reflect"
 	"testing"
 
+	"github.com/alicebob/miniredis"
 	"github.com/gojek/kafqa/config"
 	"github.com/gojek/kafqa/creator"
 	"github.com/gojek/kafqa/store"
@@ -75,26 +77,46 @@ func (s *InmemorySuite) TestShouldRemoveAcknowledgedMessages() {
 	}
 }
 
-func TestShouldCheckIfInMemoryStoreIsReturned(t *testing.T) {
-	appConfig := config.Application{Producer: config.Producer{TotalMessages: 100, Enabled: true}, Consumer: config.Consumer{Enabled: true}}
+func TestValidatesStoreCreated(t *testing.T) {
+	producer := config.Producer{TotalMessages: 100, Enabled: true}
+	consumer := config.Consumer{Enabled: true}
 	traceID := func(t store.Trace) string { return t.Message.ID }
+	mr, _ := miniredis.Run()
 
-	newStore, err := store.New(appConfig, traceID)
-	storeType, ok := newStore.(*store.InMemory)
+	testCases := []struct {
+		expectedType string
+		appConfig    config.Application
+	}{
+		{
+			"*store.Redis",
+			config.Application{
+				Producer: producer,
+				Consumer: consumer,
+				Store:    config.Store{Type: "redis", RunID: "test_namespace", RedisHost: mr.Addr()},
+			},
+		},
+		{
+			"*store.InMemory",
+			config.Application{
+				Producer: producer,
+				Consumer: consumer,
+			},
+		},
+		{
+			"store.NoOp",
+			config.Application{
+				Producer: config.Producer{TotalMessages: -1},
+				Consumer: consumer,
+			},
+		},
+	}
 
-	assert.True(t, ok)
-	require.NoError(t, err)
-	require.NotEmptyf(t, storeType, "")
-}
-
-func TestShouldCheckIfNoOpStoreIsReturned(t *testing.T) {
-	appConfig := config.Application{Producer: config.Producer{TotalMessages: -1, Enabled: true}}
-	traceID := func(t store.Trace) string { return t.Message.ID }
-
-	newStore, err := store.New(appConfig, traceID)
-	storeType, ok := newStore.(store.NoOp)
-
-	assert.True(t, ok)
-	require.NoError(t, err)
-	require.Empty(t, storeType, "")
+	for _, testCase := range testCases {
+		t.Run(testCase.expectedType, func(t *testing.T) {
+			newStore, err := store.New(testCase.appConfig, traceID)
+			require.Nil(t, err)
+			actualType := reflect.TypeOf(newStore).String()
+			assert.Equal(t, testCase.expectedType, actualType)
+		})
+	}
 }
