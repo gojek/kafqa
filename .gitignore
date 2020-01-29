@@ -6,3 +6,4 @@ local.env
 .idea
 *.bkp
 *.swp
+coverage.txt
