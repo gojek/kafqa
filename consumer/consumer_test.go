@@ -22,26 +22,23 @@ type ConsumerSuite struct {
 
 func (s *ConsumerSuite) SetupTest() {
 	logger.Setup("")
-	var consumers []consumer
-	for i := 0; i < 1; i++ {
-		kafkaconsumer := new(consumerMock)
-		msg := &kafka.Message{}
-		kafkaconsumer.On("Close").Return(nil)
-		kafkaconsumer.On("ReadMessage", mock.AnythingOfType("time.Duration")).Return(msg, nil)
-		kafkaconsumer.On("CommitMessage", msg).Return(make([]kafka.TopicPartition, 1), nil)
-		consumers = append(consumers, kafkaconsumer)
-	}
+
 	s.consumer = &Consumer{
-		config:    config.Consumer{Concurrency: 1},
-		consumers: consumers,
-		wg:        &sync.WaitGroup{},
-		cbwg:      &sync.WaitGroup{},
-		exit:      make(chan struct{}, 1),
+		config: config.Consumer{Concurrency: 1},
+		wg:     &sync.WaitGroup{},
+		cbwg:   &sync.WaitGroup{},
+		exit:   make(chan struct{}, 1),
 	}
 }
 
 func (s *ConsumerSuite) TestIfCallbackCalled() {
 	t := s.T()
+	msg := &kafka.Message{}
+	kafkaconsumer := new(consumerMock)
+	s.consumer.consumers = []consumer{kafkaconsumer}
+	kafkaconsumer.On("Close").Return(nil)
+	kafkaconsumer.On("ReadMessage", time.Duration(0)).Return(msg, nil)
+	kafkaconsumer.On("CommitMessage", msg).Return(make([]kafka.TopicPartition, 1), nil)
 	ch := make(chan struct{}, 1)
 	var callbackCalled int32
 	call := func(msg *kafka.Message) {
