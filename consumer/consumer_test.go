@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -56,6 +57,33 @@ func (s *ConsumerSuite) TestIfCallbackCalled() {
 	s.consumer.Close()
 
 	assert.GreaterOrEqual(t, atomic.LoadInt32(&callbackCalled), int32(1), "Callback called! Message received")
+}
+
+func (s *ConsumerSuite) TestCallbackCalledForNMessages() {
+	n := 10
+	kafkaconsumer := new(consumerMock)
+	s.consumer.consumers = []consumer{kafkaconsumer}
+	msg := &kafka.Message{Key: []byte("someMessage")}
+	kafkaconsumer.On("Close").Return(nil)
+	kafkaconsumer.On("ReadMessage", mock.AnythingOfType("time.Duration")).Return(msg, nil).Times(n)
+	kafkaconsumer.On("ReadMessage", mock.AnythingOfType("time.Duration")).Return(&kafka.Message{}, errors.New("failed"))
+	kafkaconsumer.On("CommitMessage", msg).Return(make([]kafka.TopicPartition, 1), nil)
+	var callbackCalled int32
+	callback := func(msg *kafka.Message) {
+		go func() {
+			atomic.AddInt32(&callbackCalled, int32(1))
+		}()
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2000*time.Millisecond)
+	defer cancel()
+	s.consumer.Register(callback)
+
+	s.consumer.Run(ctx)
+
+	time.Sleep(time.Duration(20) * time.Millisecond)
+	s.consumer.Close()
+	assert.Equal(s.T(), int32(n), atomic.LoadInt32(&callbackCalled))
+	kafkaconsumer.AssertExpectations(s.T())
 }
 
 func TestConsumer(t *testing.T) {
