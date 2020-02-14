@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -10,12 +11,20 @@ import (
 type Config struct {
 	Agent
 	Kafka
-	DevMode bool `split_words:"true" default:"false"`
+	Prometheus
+}
+
+type Prometheus struct {
+	Enabled    bool   `default:"false"`
+	Port       int    `default:"9999"`
+	Host       string `envconfig:"HOSTNAME"`
+	Deployment string `envconfig:"DEPLOYMENT"`
 }
 
 type Agent struct {
-	ScheduleMs       int `split_words:"true" default:"100"`
-	ErrorChannelSize int `split_words:"true" default:10000`
+	DevMode          bool `split_words:"true" default:"false"`
+	ScheduleMs       int  `split_words:"true" default:"100"`
+	ErrorChannelSize int  `split_words:"true" default:"10000"`
 }
 
 type Kafka struct {
@@ -25,8 +34,9 @@ type Kafka struct {
 func LoadAgentConfig() (Config, error) {
 	cfg := Config{}
 	cfgs := map[string]interface{}{
-		"AGENT": &cfg.Agent,
-		"KAFKA": &cfg.Kafka,
+		"AGENT":      &cfg.Agent,
+		"KAFKA":      &cfg.Kafka,
+		"PROMETHEUS": &cfg.Prometheus,
 	}
 
 	err := loadConfigs(cfgs)
@@ -53,4 +63,15 @@ func loadConfigs(configs map[string]interface{}) error {
 		}
 	}
 	return errs.ErrorOrNil()
+}
+
+func (a Config) LogLevel() string {
+	if a.Agent.DevMode {
+		return "development"
+	}
+	return "production"
+}
+
+func (p Prometheus) BindPort() string {
+	return fmt.Sprintf("0.0.0.0:%d", p.Port)
 }

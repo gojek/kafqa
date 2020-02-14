@@ -54,19 +54,19 @@ func (n Navigator) getPartitionInfo(files []os.FileInfo) ([]TopicPartitionInfo, 
 	return metadata, nil
 }
 
-func (n Navigator) splitTopicPartition(name string) (string, int, error) {
+func (n Navigator) splitTopicPartition(name string) (topic string, partition int, err error) {
 	fields := n.rgx.FindAllStringSubmatch(name, -1)
 	// [][]{"complete-match-1", "complete-match", "1"}
 	if len(fields) < 1 {
 		return "", -1, fmt.Errorf("unable to parse topic for dir: %v", name)
 	}
-	topic := fields[0][1]
+	topic = fields[0][1]
 	id := fields[0][2]
-	pid, err := strconv.Atoi(id)
+	partition, err = strconv.Atoi(id)
 	if err != nil {
 		return "", -1, err
 	}
-	return topic, pid, err
+	return
 }
 
 func (n Navigator) getTopicPartition(info os.FileInfo) (TopicPartitionInfo, error) {

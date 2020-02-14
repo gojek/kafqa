@@ -19,6 +19,7 @@ func init() {
 func TestShouldRunJob(t *testing.T) {
 	job := new(MockJob)
 	job.On("Run").Return(nil)
+	job.On("ID").Return("jobid")
 	cfg := agent.Config{Agent: agent.Agent{ScheduleMs: 10}}
 	agent := New(cfg, job)
 

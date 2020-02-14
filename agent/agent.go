@@ -47,7 +47,7 @@ func (a *Agent) runJobs() {
 	for _, j := range a.jobs {
 
 		go func(j Job, wg *sync.WaitGroup) {
-			defer a.wg.Done()
+			defer wg.Done()
 
 			err := j.Run()
 			if err != nil {
@@ -57,12 +57,17 @@ func (a *Agent) runJobs() {
 				case a.errors <- err:
 					logger.Debugf("unsuccessful job run: %s with error: %v", j.ID(), err)
 				default:
-					logger.Debugf("error channel is full, got error: %v", err)
 				}
+			} else {
+				logger.Infof("job: %s completed successfully", j.ID())
 			}
 		}(j, a.wg)
 	}
 
+}
+
+func (a Agent) Wait() {
+	a.wg.Wait()
 }
 
 func (a Agent) Stop() {
@@ -76,6 +81,7 @@ func (a Agent) Stop() {
 
 func New(cfg agent.Config, jobs ...Job) *Agent {
 	timer := time.NewTicker(cfg.ScheduleDuration())
+	logger.Debugf("total jobs registered: %d", len(jobs))
 	return &Agent{
 		jobs:   jobs,
 		timer:  timer,
