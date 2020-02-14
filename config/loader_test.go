@@ -3,7 +3,9 @@ package config
 import (
 	"os"
 	"testing"
+	"time"
 
+	"github.com/gojek/kafqa/config/agent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -45,6 +47,21 @@ func TestShouldLoadKafkaSSLConfig(t *testing.T) {
 	assert.Equal(t, "ca.crt", kafkaCfg[SSLCALocation])
 	assert.Equal(t, "cert.crt", kafkaCfg[SSLCertLocation])
 	assert.Equal(t, "cons.key", kafkaCfg[SSLKeyLocation])
+}
+
+func TestShouldLoadAgentConfig(t *testing.T) {
+	envs := map[string]string{
+		"AGENT_SCHEDULE_MS": "5",
+		"KAFKA_DATA_DIR":    "/kafka/logs",
+	}
+	older := setEnvs(envs)
+	defer setEnvs(older)
+
+	cfg, err := agent.LoadAgentConfig()
+
+	require.NoError(t, err)
+	assert.Equal(t, time.Duration(5)*time.Millisecond, cfg.ScheduleDuration())
+	assert.Equal(t, "/kafka/logs", cfg.KafkaDataDir())
 }
 
 func setEnvs(envs map[string]string) map[string]string {

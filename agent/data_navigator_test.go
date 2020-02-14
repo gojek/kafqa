@@ -17,7 +17,7 @@ func TestShouldGetTopicInformation(t *testing.T) {
 
 	dir, err := filepath.Abs("./testdata/datadir")
 	require.NoError(t, err)
-	navigator, err := New(dir)
+	navigator, err := NewNavigator(dir)
 	require.NoError(t, err)
 
 	tps, err := navigator.GetTopicsMetadata()
@@ -38,7 +38,7 @@ func TestShouldReturnErrorForInvalidDir(t *testing.T) {
 }
 
 func TestShouldSplitTopicPartition(t *testing.T) {
-	nav, _ := New("somedir")
+	nav, _ := NewNavigator("somedir")
 
 	topic, partition, err := nav.splitTopicPartition("something-topic-1")
 
