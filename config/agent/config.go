@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -43,6 +44,7 @@ func LoadAgentConfig() (Config, error) {
 	if err != nil {
 		return cfg, err
 	}
+	log.Printf("loaded agent config: %+v", cfg)
 	return cfg, nil
 }
 
@@ -67,9 +69,9 @@ func loadConfigs(configs map[string]interface{}) error {
 
 func (a Config) LogLevel() string {
 	if a.Agent.DevMode {
-		return "development"
+		return "debug"
 	}
-	return "production"
+	return "info"
 }
 
 func (p Prometheus) BindPort() string {

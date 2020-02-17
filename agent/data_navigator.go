@@ -31,9 +31,8 @@ func (n Navigator) GetTopicsMetadata() ([]TopicPartitionInfo, error) {
 		return nil, err
 	}
 	metadata, err := n.getPartitionInfo(files)
-	logger.Debugf("navigating data dir: %s\n", n.datadir)
 	if err != nil {
-		logger.Debugf("error walking dir: %s", n.datadir)
+		logger.Debugf("error getting information for dir: %s", n.datadir)
 		return nil, err
 	}
 	return metadata, nil
@@ -45,9 +44,13 @@ func (n Navigator) getPartitionInfo(files []os.FileInfo) ([]TopicPartitionInfo, 
 		if !f.IsDir() {
 			continue
 		}
-		m, err := n.getTopicPartition(f)
+		di, err := getDirsSize(filepath.Join(n.datadir, f.Name()))
 		if err != nil {
-			return nil, fmt.Errorf("error processing %s: %v", f.Name(), err)
+			return nil, fmt.Errorf("error getting size %s: %v", f.Name(), err)
+		}
+		m, err := n.getTopicPartition(di)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing %s: %v", f.Name(), err)
 		}
 		metadata = append(metadata, m)
 	}
@@ -69,17 +72,15 @@ func (n Navigator) splitTopicPartition(name string) (topic string, partition int
 	return
 }
 
-func (n Navigator) getTopicPartition(info os.FileInfo) (TopicPartitionInfo, error) {
-	filename := info.Name()
-	logger.Debugf("parsing %s\n", filename)
-	topic, p, err := n.splitTopicPartition(filename)
+func (n Navigator) getTopicPartition(dir dirInfo) (TopicPartitionInfo, error) {
+	topic, p, err := n.splitTopicPartition(dir.name)
 	if err != nil {
 		return TopicPartitionInfo{}, fmt.Errorf("error for topic: %s", err)
 	}
 	return TopicPartitionInfo{
 		topic:     topic,
 		partition: p,
-		sizeBytes: info.Size(),
+		sizeBytes: dir.sizeBytes,
 	}, nil
 }
 

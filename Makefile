@@ -18,9 +18,10 @@ setup_godog:
 check-quality: setup lint fmt imports vet
 
 build:
-	@echo "Building './out/kafqa'..."
+	@echo "Building './out/kafqa' './out/agent'..."
 	@mkdir -p ./out
-	@go build -o out/kafqa
+	@go build -o out/kafqa ./cmd/kafqa
+	@go build -o out/agent ./cmd/agent
 
 testv:
 	GOMAXPROCS=1 go test -race -v ./...

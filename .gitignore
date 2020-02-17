@@ -1,4 +1,3 @@
-kafqa
 vendor
 out
 data
@@ -7,3 +6,5 @@ local.env
 *.bkp
 *.swp
 coverage.txt
+cmd/kafqa/kafqa
+cmd/agent/agent

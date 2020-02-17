@@ -30,7 +30,7 @@ func main() {
 	navJob := agent.NewTopicSizeReporter(nav, pcli)
 
 	ag := agent.New(cfg, navJob)
-	registerSignalHandler(ag)
+	go registerSignalHandler(ag)
 
 	errs := ag.Start()
 	go logErrors(errs)
