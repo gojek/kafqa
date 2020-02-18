@@ -1,6 +1,5 @@
 all: clean check-quality build testv golangci
 
-APP=kafkq
 ALL_PACKAGES=$(shell go list ./...)
 SOURCE_DIRS=$(shell go list ./... | cut -d "/" -f4 | uniq)
 

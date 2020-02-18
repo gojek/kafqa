@@ -91,6 +91,10 @@ func NewNavigator(datadir string) (Navigator, error) {
 	}
 	_, base := filepath.Split(datadir)
 
+	_, err = os.Stat(datadir)
+	if err != nil && os.IsNotExist(err) {
+		return Navigator{}, err
+	}
 	//TODO: validate path existence
 	return Navigator{
 		datadir:     datadir,

@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"flag"
 	"path/filepath"
 	"testing"
 
@@ -9,11 +10,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var integration *bool
+
 func init() {
-	logger.Setup("none")
+	logger.Setup("debug")
+	// Use it for running tests locally as exact directory size differs in linux
+	integration = flag.Bool("integration", false, "run integration tests")
 }
 
 func TestShouldGetTopicInformation(t *testing.T) {
+	if !*integration {
+		logger.Infof("Skipping test: %s", t.Name())
+		t.Skip()
+	}
 
 	dir, err := filepath.Abs("./testdata/datadir")
 	require.NoError(t, err)
@@ -34,11 +43,21 @@ func TestShouldGetTopicInformation(t *testing.T) {
 }
 
 func TestShouldReturnErrorForInvalidDir(t *testing.T) {
+	_, err := NewNavigator("somedir")
 
+	assert.EqualError(t, err, "stat somedir: no such file or directory")
 }
 
 func TestShouldSplitTopicPartition(t *testing.T) {
-	nav, _ := NewNavigator("somedir")
+
+	if !*integration {
+		logger.Infof("Skipping test: %s", t.Name())
+		t.Skip()
+	}
+	dir, err := filepath.Abs("./testdata/datadir")
+	require.NoError(t, err)
+	nav, err := NewNavigator(dir)
+	require.NoError(t, err)
 
 	topic, partition, err := nav.splitTopicPartition("something-topic-1")
 
@@ -47,11 +66,16 @@ func TestShouldSplitTopicPartition(t *testing.T) {
 	assert.Equal(t, 1, partition)
 }
 
-func TestBla(t *testing.T) {
+func TestDirectorySizeIntegration(t *testing.T) {
+	flag.Parse()
+	if !*integration {
+		logger.Infof("Skipping test: %s", t.Name())
+		t.Skip()
+	}
 	dir, _ := filepath.Abs("./testdata")
 
 	di, err := getDirsSize(dir)
 
 	require.NoError(t, err)
-	assert.Equal(t, di, dirInfo{name: dir, sizeBytes: 759})
+	assert.Equal(t, dirInfo{name: dir, sizeBytes: 759}, di)
 }
