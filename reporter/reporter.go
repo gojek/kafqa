@@ -6,6 +6,7 @@ import (
 
 	"github.com/gojek/kafqa/config"
 	"github.com/gojek/kafqa/reporter/metrics"
+	"github.com/gojek/kafqa/reporter/pprof"
 	"github.com/gojek/kafqa/store"
 )
 
@@ -28,7 +29,9 @@ func Setup(sr storeReporter, maxNLatency int, cfg config.Reporter, producerCfg c
 		start:   time.Now(),
 	}
 	metrics.Setup(cfg.Prometheus, producerCfg)
-	metrics.SetupPProf(cfg.PProf)
+	if cfg.PProf.Enabled {
+		pprof.StartServer(cfg.PProf.Port)
+	}
 }
 
 func ConsumptionDelay(t time.Duration) {

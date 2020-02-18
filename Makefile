@@ -17,11 +17,16 @@ setup_godog:
 
 check-quality: setup lint fmt imports vet
 
-build:
+build-linux:
+	GOOS=linux CGO_ENABLED=0 GOARCH=amd64 go build -o out/agent-lx ./cmd/agent
+
+build-local:
 	@echo "Building './out/kafqa' './out/agent'..."
 	@mkdir -p ./out
 	@go build -o out/kafqa ./cmd/kafqa
 	@go build -o out/agent ./cmd/agent
+
+build: build-linux build-local
 
 testv:
 	GOMAXPROCS=1 go test -race -v ./...

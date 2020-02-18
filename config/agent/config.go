@@ -5,7 +5,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/gojek/kafqa/config"
 	"github.com/hashicorp/go-multierror"
 	"github.com/kelseyhightower/envconfig"
 )
@@ -14,7 +13,12 @@ type Config struct {
 	Agent
 	Kafka
 	Prometheus
-	config.PProf
+	PProf
+}
+
+type PProf struct {
+	Enabled bool `default:"false"`
+	Port    int  `default:"9998"`
 }
 
 type Prometheus struct {
