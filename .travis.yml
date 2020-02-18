@@ -25,7 +25,7 @@ jobs:
   include:
     - stage: test
       name: "Unit tests"
-      script: make test
+      script: pwd && ls ./agent/testdata/ && ls ./agent && make test
     - script: make testcodecov
       name: "Unit tests code coverage"
     - script: make check-quality
