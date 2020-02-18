@@ -46,7 +46,8 @@ func Setup(cfg agcfg.Prometheus, collectors ...prometheus.Collector) (PromClient
 			}
 		}()
 		logger.Debugf("Enabled prometheus at /metris port: %s", cfg.BindPort())
-		return PromClient{port: cfg.Port, enabled: cfg.Enabled}, nil
+		tags := Tags{broker: cfg.Host, deployment: cfg.Deployment}
+		return PromClient{port: cfg.Port, Tags: tags, enabled: cfg.Enabled}, nil
 	}
 	logger.Debugf("Prometheus metrics disabled")
 	return PromClient{}, nil

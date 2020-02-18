@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/gojek/kafqa/config"
 	"github.com/hashicorp/go-multierror"
 	"github.com/kelseyhightower/envconfig"
 )
@@ -13,6 +14,7 @@ type Config struct {
 	Agent
 	Kafka
 	Prometheus
+	config.PProf
 }
 
 type Prometheus struct {
@@ -38,6 +40,7 @@ func LoadAgentConfig() (Config, error) {
 		"AGENT":      &cfg.Agent,
 		"KAFKA":      &cfg.Kafka,
 		"PROMETHEUS": &cfg.Prometheus,
+		"PPROF":      &cfg.PProf,
 	}
 
 	err := loadConfigs(cfgs)

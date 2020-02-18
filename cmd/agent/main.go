@@ -10,6 +10,7 @@ import (
 	"github.com/gojek/kafqa/agent/metrics"
 	agcfg "github.com/gojek/kafqa/config/agent"
 	"github.com/gojek/kafqa/logger"
+	repmetrics "github.com/gojek/kafqa/reporter/metrics"
 )
 
 func main() {
@@ -31,6 +32,8 @@ func main() {
 
 	ag := agent.New(cfg, navJob)
 	go registerSignalHandler(ag)
+
+	repmetrics.SetupPProf(cfg.PProf)
 
 	errs := ag.Start()
 	go logErrors(errs)

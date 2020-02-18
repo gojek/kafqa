@@ -59,7 +59,7 @@ func (a *Agent) runJobs() {
 				default:
 				}
 			} else {
-				logger.Infof("job: %s completed successfully", j.ID())
+				logger.Debugf("job: %s completed successfully", j.ID())
 			}
 		}(j, a.wg)
 	}
