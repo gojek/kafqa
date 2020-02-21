@@ -5,6 +5,7 @@ go: 1.12.5
 stages:
   - test
   - build
+  - deploy
 
 before_install:
   - git clone https://github.com/edenhill/librdkafka.git
@@ -34,6 +35,9 @@ jobs:
       name: "Run Golangci"
     - stage: build
       script: make clean build
+    - stage: deploy
+      script: 
+        - curl -sL https://git.io/goreleaser | bash -s -- --skip-publish --debug
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
