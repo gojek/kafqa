@@ -1,0 +1,17 @@
+builds:
+- env:
+  - CGO_ENABLED=0
+  main: ./cmd/agent/main.go
+  binary: kafqa-agent
+  id: agent
+archives:
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'

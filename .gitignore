@@ -8,3 +8,4 @@ local.env
 coverage.txt
 cmd/kafqa/kafqa
 cmd/agent/agent
+dist/
