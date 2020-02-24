@@ -8,8 +8,6 @@ stages:
   - build
 
 before_install:
-  - sudo apt-get --reinstall install libc6 libc6-dev
-  - sudo apt-get install gcc-multilib g++-multilib
   - git clone https://github.com/edenhill/librdkafka.git
   - cd librdkafka
   - ./configure --prefix /usr
@@ -38,8 +36,9 @@ jobs:
     - stage: build
       script: make clean build
     - stage: deploy
-      script: 
-        - curl -sL https://git.io/goreleaser | bash -s -- --skip-publish --debug
+      if: tag is PRESENT
+      script:
+        - curl -sL https://git.io/goreleaser | bash -s -- --debug
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
