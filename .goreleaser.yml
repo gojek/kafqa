@@ -1,12 +1,10 @@
 builds:
 - env:
-  - CGO_ENABLED=1
-  main: ./cmd/kafqa/main.go
-  id: kafqa
+  - CGO_ENABLED=0
+  main: ./cmd/agent/main.go
+  binary: kafqa-agent
+  id: agent
 archives:
-- replacements:
-    linux: Linux
-    amd64: 64-bit
 checksum:
   name_template: 'checksums.txt'
 snapshot:

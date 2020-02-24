@@ -3,11 +3,13 @@ language: go
 go: 1.12.5
 
 stages:
+  - deploy
   - test
   - build
-  - deploy
 
 before_install:
+  - sudo apt-get --reinstall install libc6 libc6-dev
+  - sudo apt-get install gcc-multilib g++-multilib
   - git clone https://github.com/edenhill/librdkafka.git
   - cd librdkafka
   - ./configure --prefix /usr
