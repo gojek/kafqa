@@ -46,6 +46,7 @@ type Producer struct {
 	Acks             int `default:"1"`
 	Librdconfigs     LibrdConfigs
 	ClusterName      string `envconfig:"KAFKA_CLUSTER"`
+	CompressionType  string `default:"none"`
 }
 
 type Consumer struct {
@@ -156,6 +157,7 @@ func (p Producer) KafkaConfig() *kafka.ConfigMap {
 		ProducerQueueBufferingMaxMessages: p.Librdconfigs.QueueBufferingMaxMessage,
 		ProduceRequestRequiredAcks:        p.Librdconfigs.RequestRequiredAcks,
 		LibrdStatisticsIntervalMs:         p.Librdconfigs.StatisticsIntervalMs,
+		CompressionType:                   p.CompressionType,
 	}
 }
 

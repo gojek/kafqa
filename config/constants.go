@@ -19,3 +19,4 @@ const ProduceRequestRequiredAcks string = "request.required.acks"
 const ConsumerQueuedMinMessages string = "queued.min.messages"
 
 const LibrdStatisticsIntervalMs string = "statistics.interval.ms"
+const CompressionType string = "compression.type"
