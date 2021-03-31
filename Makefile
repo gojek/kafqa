@@ -46,7 +46,6 @@ fix_imports:
 	goimports -l -w .
 
 golangci:
-	GO111MODULE=off go get -v github.com/golangci/golangci-lint/cmd/golangci-lint
 	golangci-lint run -v --deadline 5m0s
 
 cyclo:

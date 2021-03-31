@@ -1,0 +1,29 @@
+name: build
+on: 
+  push:
+    tags:
+      - v*
+    branches:
+      - master
+      - main
+      - kafqa_ci_fix
+  pull_request:
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: build
+        uses: actions/setup-go@v2
+        with:
+          go-version: '^1.13.1'
+      - name: install librdkafka
+        run: |
+          git clone https://github.com/edenhill/librdkafka.git
+          pushd librdkafka && ./configure --prefix /usr
+          sudo make
+          sudo make install
+          popd
+      - name: build
+        run: make test
