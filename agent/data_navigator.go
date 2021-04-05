@@ -11,7 +11,7 @@ import (
 	"github.com/gojek/kafqa/logger"
 )
 
-const expr = `(?m)([\w\._\-]+?)-(\d+$)`
+const expr = `(?m)([\w.\-]+?)-(\d+$)`
 
 type TopicPartitionInfo struct {
 	topic     string

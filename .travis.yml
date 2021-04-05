@@ -13,7 +13,6 @@ before_install:
   - ./configure --prefix /usr
   - make
   - sudo make install
-  - go get -v github.com/golangci/golangci-lint/cmd/golangci-lint
 
 before_script:
   - cd $KAFQA_DIR

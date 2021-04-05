@@ -46,7 +46,8 @@ fix_imports:
 	goimports -l -w .
 
 golangci:
-	golangci-lint run -v --deadline 5m0s
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b bin/ v1.30.0
+	bin/golangci-lint run -v --deadline 5m0s
 
 cyclo:
 	gocyclo -over 6 $(SOURCE_DIRS)
