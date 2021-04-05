@@ -1,6 +1,8 @@
 # KAFQA
-[![Build Status](https://travis-ci.org/gojek/kafqa.svg?branch=master)](https://travis-ci.org/gojek/kafqa)
+[![Travis Build](https://travis-ci.org/gojek/kafqa.svg?branch=master)](https://travis-ci.org/gojek/kafqa)
 [![codecov](https://codecov.io/gh/gojek/kafqa/branch/master/graph/badge.svg)](https://codecov.io/gh/gojek/kafqa)
+[![build](https://github.com/gojek/kafqa/actions/workflows/build.yml/badge.svg)](https://github.com/gojek/kafqa/actions/workflows/build.yml)
+[![Golangci-lint](https://github.com/gojek/kafqa/actions/workflows/golangci.yml/badge.svg)](https://github.com/gojek/kafqa/actions/workflows/golangci.yml)
 
 Kafka quality analyser, measuring data loss, ops, latency
 
